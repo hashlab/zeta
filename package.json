@@ -4,7 +4,7 @@
   "description": "A bot to help our DevOps teams manage our infrastructure",
   "private": true,
   "author": "Christopher Enytc <chris@hashlab.com.br>",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "homepage": "https://github.com/hashlab/zeta#readme",
   "bugs": {
     "url": "https://github.com/hashlab/zeta/issues"
