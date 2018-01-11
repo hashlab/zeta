@@ -16,6 +16,10 @@
 
 ```
 
+[![Maintenance](https://img.shields.io/maintenance/yes/2018.svg?maxAge=2592000)]() [![License](https://img.shields.io/github/license/hashlab/zeta.svg?maxAge=2592000)](https://github.com/hashlab/zeta/blob/master/LICENSE) [![Twitter Follow](https://img.shields.io/twitter/follow/hashlab.svg?style=social&label=Follow&maxAge=2592000)](http://twitter.com/chrisenytc) [![Twitter URL](https://img.shields.io/twitter/url/http/shields.io.svg?style=social&maxAge=2592000)](https://twitter.com/intent/tweet?text=Awesome%20https://github.com/hashlab/zeta%20via%20@chrisenytc)
+
+> A bot to help our DevOps teams manage our infrastructure
+
 ## Getting Started
 
 1º Clone zeta repo
@@ -93,3 +97,21 @@ Removing features on repo
 ```bash
 git commit -m "Remove feature: nameoffeature Message about this"
 ```
+
+
+## Contributing
+
+Bug reports and pull requests are welcome on GitHub at [https://github.com/hashlab/zeta](https://github.com/hashlab/zeta). This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](http://contributor-covenant.org) code of conduct.
+
+1. Fork it [hashlab/zeta](https://github.com/hashlab/zeta/fork)
+2. Create your feature branch (`git checkout -b my-new-feature`)
+3. Commit your changes (`git commit -am "Add some feature"`)
+4. Push to the branch (`git push origin my-new-feature`)
+5. Create new Pull Request
+
+## Support
+If you have any problem or suggestion please open an issue [here](https://github.com/hashlab/zeta/issues).
+
+## License 
+
+Check [here](LICENSE).
