@@ -11,10 +11,12 @@
 //
 // Commands:
 //   hubot netlify sites - Get a list of all sites hosted on Netlify
+//   hubot netlify site <domain> - Get details of a site hosted on Netlify
 //
 // Author:
 //   chris@hashlab.com.br
 
+const R = require('ramda')
 const Request = require('axios')
 const Promise = require('bluebird')
 const CheckEnv = require('../helpers/check-env')
@@ -44,7 +46,7 @@ const NetlifyClient = Request.create(Opts)
 // Public
 
 module.exports = function netlifyScript (robot) {
-  return robot.respond(/netlify sites/i, (res) => {
+  robot.respond(/netlify sites/i, (res) => {
     if (!CheckEnv(robot, 'HUBOT_NETLIFY_ACCESS_TOKEN')) {
       return null
     }
@@ -68,6 +70,41 @@ module.exports = function netlifyScript (robot) {
 
     function getSites () {
       return NetlifyClient.get('/sites')
+    }
+
+    function respond (response) {
+      return res.send(FormatJSON(response.data))
+    }
+
+    return NetlifyPromise
+  })
+
+  robot.respond(/netlify site (.*)/i, (res) => {
+    if (!CheckEnv(robot, 'HUBOT_NETLIFY_ACCESS_TOKEN')) {
+      return null
+    }
+
+    const Site = R.replace(/http:\/\//g, '', res.match[1])
+
+    const NetlifyPromise = Promise.resolve()
+      .tap(checkUserPermission)
+      .then(getSite)
+      .then(respond)
+      .catch(ErrorHandler(robot, res, 'netlify site <domain>'))
+
+    function checkUserPermission () {
+      return Promise.resolve()
+        .then(CheckPermission(robot, res))
+        .tap((hasPermission) => {
+          if (!hasPermission) {
+            return NetlifyPromise.cancel()
+          }
+          return null
+        })
+    }
+
+    function getSite () {
+      return NetlifyClient.get(`/sites/${Site}`)
     }
 
     function respond (response) {
