@@ -22,6 +22,13 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
+    "axios": "0.16.2",
+    "ramda": "0.25.0",
+    "moment": "2.19.3",
+    "moment-timezone": "0.5.14",
+    "bluebird": "3.5.1",
+    "prettyjson": "1.2.1",
+
     "hubot": "2.19.0",
     "hubot-diagnostics": "0.0.2",
     "hubot-help": "0.2.2",
