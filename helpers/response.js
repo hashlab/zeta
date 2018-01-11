@@ -81,6 +81,7 @@ module.exports = function respondToUser (robot, response, error, message, type) 
       if (error && error.response) {
         return errorMessage(response, `${errResponse}\n${errResponseStatusCode}`)
           .then(() => errorMessage(response, `\`\`\`\n${JSON.stringify(error.response.data)}\n\`\`\``))
+          .then(() => errorMessage(response, `\`\`\`\n${JSON.stringify(error.response.config)}\n\`\`\``))
       } else if (error && !error.response) {
         return errorMessage(response, errMessage)
       }
