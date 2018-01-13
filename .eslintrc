@@ -1,5 +1,6 @@
 {
   "extends": [
+    "eslint:recommended",
     "plugin:prettier/recommended",
     "plugin:promise/recommended"
   ],
@@ -14,5 +15,9 @@
   "parserOptions": {
     "sourceType": "module"
   },
-  "rules": {}
+  "rules": {
+    "no-use-before-define": [1, "nofunc"],
+    "no-undef": [1],
+    "no-unused-vars": [1]
+  }
 }
