@@ -1,3 +1,3 @@
-module.exports = function getAllowedUsers () {
-  return (process.env.HUBOT_ALLOWED_USERS || '').split(',')
-}
+module.exports = function getAllowedUsers() {
+  return (process.env.HUBOT_ALLOWED_USERS || "").split(",");
+};

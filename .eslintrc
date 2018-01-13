@@ -1,7 +1,18 @@
 {
-  "extends": ["prettier"],
+  "extends": [
+    "plugin:prettier/recommended",
+    "plugin:promise/recommended"
+  ],
+  "plugins": [
+    "prettier",
+    "promise"
+  ],
   "env": {
     "node": true,
     "es6": true
   },
+  "parserOptions": {
+    "sourceType": "module"
+  },
+  "rules": {}
 }

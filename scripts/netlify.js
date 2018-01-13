@@ -16,101 +16,103 @@
 // Author:
 //   chris@hashlab.com.br
 
-const R = require('ramda')
-const Request = require('axios')
-const Promise = require('bluebird')
-const CheckEnv = require('../helpers/check-env')
-const FormatJSON = require('../helpers/format-json')
-const ErrorHandler = require('../helpers/error-handler')
-const CheckPermission = require('../helpers/check-permission')
+const R = require("ramda");
+const Request = require("axios");
+const Promise = require("bluebird");
+const CheckEnv = require("../helpers/check-env");
+const FormatJSON = require("../helpers/format-json");
+const ErrorHandler = require("../helpers/error-handler");
+const CheckPermission = require("../helpers/check-permission");
 
 Promise.config({
   cancellation: true
-})
+});
 
 // Private
 
 const Opts = {
-  baseURL: 'https://api.netlify.com/api/v1/',
+  baseURL: "https://api.netlify.com/api/v1/",
   headers: {
     common: {
       Authorization: `Bearer ${process.env.HUBOT_NETLIFY_ACCESS_TOKEN}`,
-      'User-Agent': `${process.env.HUBOT_NAME} (${process.env.HUBOT_MAINTAINER})`,
-      'Content-Type': 'application/json'
+      "User-Agent": `${process.env.HUBOT_NAME} (${
+        process.env.HUBOT_MAINTAINER
+      })`,
+      "Content-Type": "application/json"
     }
   }
-}
+};
 
-const NetlifyClient = Request.create(Opts)
+const NetlifyClient = Request.create(Opts);
 
 // Public
 
-module.exports = function netlifyScript (robot) {
-  robot.respond(/netlify sites/i, (res) => {
-    if (!CheckEnv(robot, 'HUBOT_NETLIFY_ACCESS_TOKEN')) {
-      return null
+module.exports = function netlifyScript(robot) {
+  robot.respond(/netlify sites/i, res => {
+    if (!CheckEnv(robot, "HUBOT_NETLIFY_ACCESS_TOKEN")) {
+      return null;
     }
 
     const NetlifyPromise = Promise.resolve()
       .tap(checkUserPermission)
       .then(getSites)
       .then(respond)
-      .catch(ErrorHandler(robot, res, 'netlify sites'))
+      .catch(ErrorHandler(robot, res, "netlify sites"));
 
-    function checkUserPermission () {
+    function checkUserPermission() {
       return Promise.resolve()
         .then(CheckPermission(robot, res))
-        .tap((hasPermission) => {
+        .tap(hasPermission => {
           if (!hasPermission) {
-            return NetlifyPromise.cancel()
+            return NetlifyPromise.cancel();
           }
-          return null
-        })
+          return null;
+        });
     }
 
-    function getSites () {
-      return NetlifyClient.get('/sites')
+    function getSites() {
+      return NetlifyClient.get("/sites");
     }
 
-    function respond (response) {
-      return res.send(FormatJSON(response.data))
+    function respond(response) {
+      return res.send(FormatJSON(response.data));
     }
 
-    return NetlifyPromise
-  })
+    return NetlifyPromise;
+  });
 
-  robot.respond(/netlify site (.*)/i, (res) => {
-    if (!CheckEnv(robot, 'HUBOT_NETLIFY_ACCESS_TOKEN')) {
-      return null
+  robot.respond(/netlify site (.*)/i, res => {
+    if (!CheckEnv(robot, "HUBOT_NETLIFY_ACCESS_TOKEN")) {
+      return null;
     }
 
-    const Site = R.replace(/http:\/\//g, '', res.match[1])
+    const Site = R.replace(/http:\/\//g, "", res.match[1]);
 
     const NetlifyPromise = Promise.resolve()
       .tap(checkUserPermission)
       .then(getSite)
       .then(respond)
-      .catch(ErrorHandler(robot, res, 'netlify site <domain>'))
+      .catch(ErrorHandler(robot, res, "netlify site <domain>"));
 
-    function checkUserPermission () {
+    function checkUserPermission() {
       return Promise.resolve()
         .then(CheckPermission(robot, res))
-        .tap((hasPermission) => {
+        .tap(hasPermission => {
           if (!hasPermission) {
-            return NetlifyPromise.cancel()
+            return NetlifyPromise.cancel();
           }
-          return null
-        })
+          return null;
+        });
     }
 
-    function getSite () {
-      return NetlifyClient.get(`/sites/${Site}`)
+    function getSite() {
+      return NetlifyClient.get(`/sites/${Site}`);
     }
 
-    function respond (response) {
-      return res.send(FormatJSON(response.data))
+    function respond(response) {
+      return res.send(FormatJSON(response.data));
     }
 
-    return NetlifyPromise
-  })
-}
+    return NetlifyPromise;
+  });
+};
