@@ -8,6 +8,7 @@
 //   "aws-sdk": "2.181.0"
 //
 // Configuration:
+//   HUBOT_NAME
 //   HUBOT_AWS_REGION
 //   HUBOT_AWS_ACCESS_KEY_ID
 //   HUBOT_AWS_SECRET_ACCESS_KEY
@@ -203,7 +204,13 @@ module.exports = function Route53Script(robot) {
             CallerReference: UniqueId(),
             Name: Zone,
             HostedZoneConfig: {
-              Comment: "HostedZone created by Zeta",
+              Comment: `HostedZone created by ${
+                process.env.HUBOT_NAME
+              } on behalf of @${R.pathOr(
+                "someone",
+                ["message", "user", "name"],
+                res
+              )}`,
               PrivateZone: Boolean(IsPrivate === "true")
             }
           },
@@ -481,7 +488,13 @@ module.exports = function Route53Script(robot) {
               }
             }
           ],
-          Comment: "Record Set created by Zeta"
+          Comment: `Record Set created by ${
+            process.env.HUBOT_NAME
+          } on behalf of @${R.pathOr(
+            "someone",
+            ["message", "user", "name"],
+            res
+          )}`
         },
         HostedZoneId: ZoneId
       };
@@ -576,7 +589,13 @@ module.exports = function Route53Script(robot) {
               }
             }
           ],
-          Comment: "Record Set updated by Zeta"
+          Comment: `Record Set updated by ${
+            process.env.HUBOT_NAME
+          } on behalf of @${R.pathOr(
+            "someone",
+            ["message", "user", "name"],
+            res
+          )}`
         },
         HostedZoneId: ZoneId
       };
