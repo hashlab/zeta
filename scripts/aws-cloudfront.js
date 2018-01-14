@@ -16,9 +16,10 @@
 //
 // Commands:
 //   hubot cloudfront distributions - Get a list of all distributions on AWS CloudFront
-//   hubot cloudfront create bucket <bucket-name> - Create a new distribution on AWS CloudFront
-//   hubot cloudfront distribution <bucket-name> - Get details of a distribution on AWS CloudFront
-//   hubot cloudfront delete distribution <bucket-name> - Delete a distribution on AWS CloudFront
+//   hubot cloudfront create distribution <bucket-name> - Create a new distribution on AWS CloudFront
+//   hubot cloudfront distribution <distribution-id> - Get details of a distribution on AWS CloudFront
+//   hubot cloudfront delete distribution <distribution-id> - Delete a distribution on AWS CloudFront
+//   hubot cloudfront get domain name of distribution <distribution-id> - Get the domain name of a distribution on AWS CloudFront
 //
 // Author:
 //   chris@hashlab.com.br
@@ -320,7 +321,7 @@ module.exports = function CloudFrontScript(robot) {
     }
 
     function respond(response) {
-      return res.send(JSON.stringify(response));
+      return res.send(FormatJSON(response, true));
     }
 
     return CloudFrontPromise;
@@ -393,6 +394,69 @@ module.exports = function CloudFrontScript(robot) {
 
     function respond(response) {
       return res.send(FormatJSON(response));
+    }
+
+    return CloudFrontPromise;
+  });
+
+  robot.respond(/cloudfront get domain name of distribution (.*)/i, res => {
+    if (!CheckEnv(robot, "HUBOT_AWS_REGION")) {
+      return null;
+    }
+
+    if (!CheckEnv(robot, "HUBOT_AWS_ACCESS_KEY_ID")) {
+      return null;
+    }
+
+    if (!CheckEnv(robot, "HUBOT_AWS_SECRET_ACCESS_KEY")) {
+      return null;
+    }
+
+    const DistributionId = res.match[1];
+
+    const CloudFrontPromise = Promise.resolve()
+      .tap(checkUserPermission)
+      .then(getDistributionDomainName)
+      .then(respond)
+      .catch(
+        ErrorHandler(
+          robot,
+          res,
+          "cloudfront get domain name of distribution <distribution-id>"
+        )
+      );
+
+    function checkUserPermission() {
+      return Promise.resolve()
+        .then(CheckPermission(robot, res))
+        .tap(hasPermission => {
+          if (!hasPermission) {
+            return CloudFrontPromise.cancel();
+          }
+          return null;
+        });
+    }
+
+    function getDistributionDomainName() {
+      // eslint-disable-next-line promise/avoid-new
+      return new Promise((resolve, reject) => {
+        CloudFrontClient.getDistribution({ Id: DistributionId }, function(
+          err,
+          data
+        ) {
+          if (err) {
+            return reject(err);
+          }
+
+          return resolve(data);
+        });
+      });
+    }
+
+    function respond(response) {
+      return res.send(
+        FormatJSON(R.pathOr("No domain name!", ["DomainName"], response))
+      );
     }
 
     return CloudFrontPromise;
