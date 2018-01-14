@@ -3,14 +3,16 @@
 //
 // Dependencies:
 //   "ramda": "0.25.0"
-//   "axios": "0.16.2"
 //   "bluebird": "3.5.1"
 //   "aws-sdk": "2.181.0"
 //
 // Configuration:
+//   HUBOT_NAME
 //   HUBOT_AWS_REGION
 //   HUBOT_AWS_ACCESS_KEY_ID
 //   HUBOT_AWS_SECRET_ACCESS_KEY
+//   HUBOT_AWS_CLOUDFRONT_BUCKET_LOGS
+//   HUBOT_AWS_ACM_CERTIFICATE_ARN
 //
 // Commands:
 //   hubot cloudfront distributions - Get a list of all distributions on AWS CloudFront
@@ -25,6 +27,7 @@ const R = require("ramda");
 const AWS = require("aws-sdk");
 const Promise = require("bluebird");
 const CheckEnv = require("../helpers/check-env");
+const UniqueId = require("../helpers/unique-id");
 const FormatJSON = require("../helpers/format-json");
 const RespondToUser = require("../helpers/response");
 const ErrorHandler = require("../helpers/error-handler");
@@ -95,7 +98,7 @@ module.exports = function CloudFrontScript(robot) {
     }
 
     function respond(response) {
-      return res.send(FormatJSON(response));
+      return res.send(FormatJSON(response, true));
     }
 
     return CloudFrontPromise;
@@ -114,7 +117,15 @@ module.exports = function CloudFrontScript(robot) {
       return null;
     }
 
-    const DistributionId = res.match[1];
+    if (!CheckEnv(robot, "HUBOT_AWS_CLOUDFRONT_BUCKET_LOGS")) {
+      return null;
+    }
+
+    if (!CheckEnv(robot, "HUBOT_AWS_ACM_CERTIFICATE_ARN")) {
+      return null;
+    }
+
+    const BucketName = R.replace(/http:\/\//g, "", res.match[1]);
 
     const CloudFrontPromise = Promise.resolve()
       .tap(checkUserPermission)
@@ -141,7 +152,93 @@ module.exports = function CloudFrontScript(robot) {
     }
 
     function createDistribution() {
-      const Body = {};
+      const Body = {
+        DistributionConfig: {
+          CallerReference: UniqueId(),
+          Aliases: { Quantity: 1, Items: [BucketName] },
+          DefaultRootObject: "index.html",
+          Origins: {
+            Quantity: 1,
+            Items: [
+              {
+                Id: `S3-Website-${BucketName}.s3-website-${
+                  process.env.HUBOT_AWS_REGION
+                }.amazonaws.com`,
+                DomainName: `${BucketName}.s3-website-${
+                  process.env.HUBOT_AWS_REGION
+                }.amazonaws.com`,
+                OriginPath: "",
+                CustomHeaders: { Quantity: 0, Items: [] },
+                CustomOriginConfig: {
+                  HTTPPort: 80,
+                  HTTPSPort: 443,
+                  OriginProtocolPolicy: "http-only",
+                  OriginSslProtocols: {
+                    Quantity: 3,
+                    Items: ["TLSv1", "TLSv1.1", "TLSv1.2"]
+                  },
+                  OriginReadTimeout: 30,
+                  OriginKeepaliveTimeout: 5
+                }
+              }
+            ]
+          },
+          DefaultCacheBehavior: {
+            TargetOriginId: `S3-Website-${BucketName}.s3-website-${
+              process.env.HUBOT_AWS_REGION
+            }.amazonaws.com`,
+            ForwardedValues: {
+              QueryString: false,
+              Cookies: { Forward: "none" },
+              Headers: { Quantity: 0, Items: [] },
+              QueryStringCacheKeys: { Quantity: 0, Items: [] }
+            },
+            TrustedSigners: { Enabled: false, Quantity: 0, Items: [] },
+            ViewerProtocolPolicy: "redirect-to-https",
+            MinTTL: 0,
+            AllowedMethods: {
+              Quantity: 2,
+              Items: ["HEAD", "GET"],
+              CachedMethods: { Quantity: 2, Items: ["HEAD", "GET"] }
+            },
+            SmoothStreaming: false,
+            DefaultTTL: 86400,
+            MaxTTL: 31536000,
+            Compress: true,
+            LambdaFunctionAssociations: { Quantity: 0, Items: [] }
+          },
+          CacheBehaviors: { Quantity: 0, Items: [] },
+          CustomErrorResponses: { Quantity: 0, Items: [] },
+          Comment: `Distribution created by ${
+            process.env.HUBOT_NAME
+          } on behalf of @${R.pathOr(
+            "someone",
+            ["message", "user", "name"],
+            res
+          )}`,
+          Logging: {
+            Enabled: true,
+            IncludeCookies: false,
+            Bucket: process.env.HUBOT_AWS_CLOUDFRONT_BUCKET_LOGS,
+            Prefix: "websites/"
+          },
+          PriceClass: "PriceClass_All",
+          Enabled: true,
+          ViewerCertificate: {
+            ACMCertificateArn: process.env.HUBOT_AWS_ACM_CERTIFICATE_ARN,
+            SSLSupportMethod: "sni-only",
+            MinimumProtocolVersion: "TLSv1.1_2016",
+            Certificate: process.env.HUBOT_AWS_ACM_CERTIFICATE_ARN,
+            CertificateSource: "acm"
+          },
+          Restrictions: {
+            GeoRestriction: { RestrictionType: "none", Quantity: 0, Items: [] }
+          },
+          WebACLId: "",
+          HttpVersion: "http2",
+          IsIPV6Enabled: true
+        }
+      };
 
       // eslint-disable-next-line promise/avoid-new
       return new Promise((resolve, reject) => {
@@ -223,7 +320,7 @@ module.exports = function CloudFrontScript(robot) {
     }
 
     function respond(response) {
-      return res.send(FormatJSON(response));
+      return res.send(JSON.stringify(response));
     }
 
     return CloudFrontPromise;
