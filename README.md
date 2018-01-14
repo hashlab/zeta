@@ -35,7 +35,7 @@ $ cd zeta
 
 3º Run the setup script
 ```bash
-$ bin/setup
+$ make setup
 ```
 
 4º Configure the environment variables
@@ -97,7 +97,6 @@ Removing features on repo
 ```bash
 git commit -m "Remove feature: nameoffeature Message about this"
 ```
-
 
 ## Contributing
 
