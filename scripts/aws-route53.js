@@ -23,6 +23,7 @@
 //   hubot route53 create record <zone-id> <record-name> <record-type> <field> - Create a new record set on AWS Route 53
 //   hubot route53 update record <zone-id> <record-name> <record-type> <field> - Update a record set on AWS Route 53
 //   hubot route53 delete record <zone-id> <record-name> <record-type> - Delete a record set on AWS Route 53
+//   hubot route53 point domain to cloudfront <cloudfront-domain> <zone-id> <record-name> - Point to a distribution on AWS CloudFront
 //
 // Author:
 //   chris@hashlab.com.br
@@ -704,6 +705,104 @@ module.exports = function Route53Script(robot) {
         res,
         null,
         "DNS record deleted successfully.",
+        "success"
+      );
+    }
+
+    function respond(response) {
+      return res.send(FormatJSON(response));
+    }
+
+    return Route53Promise;
+  });
+
+  robot.respond(/route53 point domain to cloudfront (.*) (.*) (.*)/i, res => {
+    if (!CheckEnv(robot, "HUBOT_AWS_REGION")) {
+      return null;
+    }
+
+    if (!CheckEnv(robot, "HUBOT_AWS_ACCESS_KEY_ID")) {
+      return null;
+    }
+
+    if (!CheckEnv(robot, "HUBOT_AWS_SECRET_ACCESS_KEY")) {
+      return null;
+    }
+
+    const CloudFrontDomain = R.replace(/http:\/\//g, "", res.match[1]);
+    const ZoneId = res.match[2];
+    const RecordName = R.replace(/http:\/\//g, "", res.match[3]);
+
+    const Route53Promise = Promise.resolve()
+      .tap(checkUserPermission)
+      .then(createAliasRecord)
+      .tap(success)
+      .then(respond)
+      .catch(
+        ErrorHandler(
+          robot,
+          res,
+          "route53 point domain to cloudfront <cloudfront-domain> <zone-id> <record-name>"
+        )
+      );
+
+    function checkUserPermission() {
+      return Promise.resolve()
+        .then(CheckPermission(robot, res))
+        .tap(hasPermission => {
+          if (!hasPermission) {
+            return Route53Promise.cancel();
+          }
+          return null;
+        });
+    }
+
+    function createAliasRecord() {
+      const Body = {
+        ChangeBatch: {
+          Changes: [
+            {
+              Action: "CREATE",
+              ResourceRecordSet: {
+                AliasTarget: {
+                  DNSName: CloudFrontDomain,
+                  EvaluateTargetHealth: false,
+                  HostedZoneId: "Z2FDTNDATAQYW2" // CloudFront hosted zone id. Don't change.
+                },
+                Name: RecordName,
+                Type: "A"
+              }
+            }
+          ],
+          Comment: `Alias Record Set created by ${
+            process.env.HUBOT_NAME
+          } on behalf of @${R.pathOr(
+            "someone",
+            ["message", "user", "name"],
+            res
+          )}`
+        },
+        HostedZoneId: ZoneId
+      };
+
+      // eslint-disable-next-line promise/avoid-new
+      return new Promise((resolve, reject) => {
+        Route53Client.changeResourceRecordSets(Body, function(err, data) {
+          if (err) {
+            return reject(err);
+          }
+
+          return resolve(data);
+        });
+      });
+    }
+
+    function success() {
+      return RespondToUser(
+        robot,
+        res,
+        null,
+        `Alias record set pointing to ${CloudFrontDomain} created successfully.`,
         "success"
       );
     }
