@@ -4,7 +4,7 @@ const RespondToUser = require("./response");
 
 module.exports = function errorHandler(robot, response, command) {
   return err => {
-    const Username = R.pathOr("", ["message", "user", "name"], response);
+    const Username = R.pathOr("someone", ["message", "user", "name"], response);
 
     return Notifier.notifyStaff(
       robot,
