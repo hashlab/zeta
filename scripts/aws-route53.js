@@ -103,7 +103,9 @@ module.exports = function Route53Script(robot) {
     }
 
     function respond(response) {
-      return res.send(FormatJSON(response));
+      return res.send(
+        FormatJSON(R.pathOr("No hosted zones!", ["HostedZones"], response))
+      );
     }
 
     return Route53Promise;
@@ -422,7 +424,20 @@ module.exports = function Route53Script(robot) {
     }
 
     function respond(response) {
-      return res.send(FormatJSON(response, true));
+      return res.send(
+        FormatJSON(
+          R.map(record => {
+            return {
+              Name: record.Name,
+              Type: record.Type,
+              Value: R.map(set => {
+                return set.Value;
+              }, R.pathOr([], ["ResourceRecords"], record)),
+              AliasTarget: record.AliasTarget
+            };
+          }, R.pathOr([], ["ResourceRecordSets"], response))
+        )
+      );
     }
 
     return Route53Promise;

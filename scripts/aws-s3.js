@@ -98,7 +98,9 @@ module.exports = function S3Script(robot) {
     }
 
     function respond(response) {
-      return res.send(FormatJSON(response));
+      return res.send(
+        FormatJSON(R.pathOr("No buckets!", ["Buckets"], response))
+      );
     }
 
     return S3Promise;

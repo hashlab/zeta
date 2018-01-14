@@ -99,7 +99,23 @@ module.exports = function CloudFrontScript(robot) {
     }
 
     function respond(response) {
-      return res.send(FormatJSON(response, true));
+      return res.send(
+        FormatJSON(
+          R.map(distribution => {
+            return {
+              Id: distribution.Id,
+              DomainName: distribution.DomainName,
+              Status: distribution.Status,
+              Comment: distribution.Comment,
+              LastModifiedTime: distribution.LastModifiedTime,
+              Aliases: R.pathOr([], ["Aliases", "Items"], distribution),
+              Origins: R.map(origin => {
+                return { Id: origin.Id, DomainName: origin.DomainName };
+              }, R.pathOr([], ["Origins", "Items"], distribution))
+            };
+          }, R.pathOr([], ["DistributionList", "Items"], response))
+        )
+      );
     }
 
     return CloudFrontPromise;
@@ -321,7 +337,27 @@ module.exports = function CloudFrontScript(robot) {
     }
 
     function respond(response) {
-      return res.send(FormatJSON(response, true));
+      return res.send(
+        FormatJSON({
+          Id: response.Id,
+          DomainName: response.DomainName,
+          Status: response.Status,
+          Comment: R.pathOr(
+            "No comment!",
+            ["DistributionConfig", "Comment"],
+            response
+          ),
+          LastModifiedTime: response.LastModifiedTime,
+          Aliases: R.pathOr(
+            [],
+            ["DistributionConfig", "Aliases", "Items"],
+            response
+          ),
+          Origins: R.map(origin => {
+            return { Id: origin.Id, DomainName: origin.DomainName };
+          }, R.pathOr([], ["DistributionConfig", "Origins", "Items"], response))
+        })
+      );
     }
 
     return CloudFrontPromise;
