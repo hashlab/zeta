@@ -12,9 +12,6 @@
     "node": true,
     "es6": true
   },
-  "parserOptions": {
-    "sourceType": "module"
-  },
   "rules": {
     "no-use-before-define": [1, "nofunc"],
     "no-undef": [1],
