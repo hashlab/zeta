@@ -18,7 +18,6 @@
 //   hubot cloudfront distributions - Get a list of all distributions on AWS CloudFront
 //   hubot cloudfront create distribution <bucket-name> - Create a new distribution on AWS CloudFront
 //   hubot cloudfront distribution <distribution-id> - Get details of a distribution on AWS CloudFront
-//   hubot cloudfront delete distribution <distribution-id> - Delete a distribution on AWS CloudFront
 //   hubot cloudfront get domain name of distribution <distribution-id> - Get the domain name of a distribution on AWS CloudFront
 //
 // Author:
@@ -358,78 +357,6 @@ module.exports = function CloudFrontScript(robot) {
           }, R.pathOr([], ["DistributionConfig", "Origins", "Items"], response))
         })
       );
-    }
-
-    return CloudFrontPromise;
-  });
-
-  robot.respond(/cloudfront delete distribution (.*)/i, res => {
-    if (!CheckEnv(robot, "HUBOT_AWS_REGION")) {
-      return null;
-    }
-
-    if (!CheckEnv(robot, "HUBOT_AWS_ACCESS_KEY_ID")) {
-      return null;
-    }
-
-    if (!CheckEnv(robot, "HUBOT_AWS_SECRET_ACCESS_KEY")) {
-      return null;
-    }
-
-    const DistributionId = res.match[1];
-
-    const CloudFrontPromise = Promise.resolve()
-      .tap(checkUserPermission)
-      .then(deleteBucket)
-      .tap(success)
-      .then(respond)
-      .catch(
-        ErrorHandler(
-          robot,
-          res,
-          "cloudfront delete distribution <distribution-id>"
-        )
-      );
-
-    function checkUserPermission() {
-      return Promise.resolve()
-        .then(CheckPermission(robot, res))
-        .tap(hasPermission => {
-          if (!hasPermission) {
-            return CloudFrontPromise.cancel();
-          }
-          return null;
-        });
-    }
-
-    function deleteBucket() {
-      // eslint-disable-next-line promise/avoid-new
-      return new Promise((resolve, reject) => {
-        CloudFrontClient.deleteDistribution({ Id: DistributionId }, function(
-          err,
-          data
-        ) {
-          if (err) {
-            return reject(err);
-          }
-
-          return resolve(data);
-        });
-      });
-    }
-
-    function success() {
-      return RespondToUser(
-        robot,
-        res,
-        null,
-        "Distribution deleted successfully.",
-        "success"
-      );
-    }
-
-    function respond(response) {
-      return res.send(FormatJSON(response));
     }
 
     return CloudFrontPromise;

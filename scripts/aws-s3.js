@@ -19,7 +19,6 @@
 //   hubot s3 enable website for bucket <bucket-name> - Enable static website mode for a bucket on AWS S3
 //   hubot s3 set policy for bucket <bucket-name> - Set website policy for a bucket on AWS S3
 //   hubot s3 get url for bucket <bucket-name> - Get the url of a bucket website on AWS S3
-//   hubot s3 delete bucket <bucket-name> - Delete a bucket on AWS Route 53
 //
 // Author:
 //   chris@hashlab.com.br
@@ -417,69 +416,6 @@ module.exports = function S3Script(robot) {
           process.env.HUBOT_AWS_REGION
         }.amazonaws.com`
       };
-    }
-
-    function respond(response) {
-      return res.send(FormatJSON(response));
-    }
-
-    return S3Promise;
-  });
-
-  robot.respond(/s3 delete bucket (.*)/i, res => {
-    if (!CheckEnv(robot, "HUBOT_AWS_REGION")) {
-      return null;
-    }
-
-    if (!CheckEnv(robot, "HUBOT_AWS_ACCESS_KEY_ID")) {
-      return null;
-    }
-
-    if (!CheckEnv(robot, "HUBOT_AWS_SECRET_ACCESS_KEY")) {
-      return null;
-    }
-
-    const BucketName = R.replace(/http:\/\//g, "", res.match[1]);
-
-    const S3Promise = Promise.resolve()
-      .tap(checkUserPermission)
-      .then(deleteBucket)
-      .tap(success)
-      .then(respond)
-      .catch(ErrorHandler(robot, res, "s3 delete bucket <bucket-name>"));
-
-    function checkUserPermission() {
-      return Promise.resolve()
-        .then(CheckPermission(robot, res))
-        .tap(hasPermission => {
-          if (!hasPermission) {
-            return S3Promise.cancel();
-          }
-          return null;
-        });
-    }
-
-    function deleteBucket() {
-      // eslint-disable-next-line promise/avoid-new
-      return new Promise((resolve, reject) => {
-        S3Client.deleteBucket({ Bucket: BucketName }, function(err, data) {
-          if (err) {
-            return reject(err);
-          }
-
-          return resolve(data);
-        });
-      });
-    }
-
-    function success() {
-      return RespondToUser(
-        robot,
-        res,
-        null,
-        "Bucket deleted successfully.",
-        "success"
-      );
     }
 
     function respond(response) {

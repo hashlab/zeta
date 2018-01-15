@@ -17,12 +17,10 @@
 //   hubot route53 zones - Get a list of all zones on AWS Route 53
 //   hubot route53 zone <zone-id> - Get details of a zone on AWS Route 53
 //   hubot route53 create zone <domain> <is-private> - Create a new zone on AWS Route 53
-//   hubot route53 delete zone <zone-id> - Delete a zone on AWS Route 53
 //   hubot route53 test <zone-id> <record-name> <record-type> - Get the value returned in response to a DNS request for a record set on AWS Route 53
 //   hubot route53 records <zone-id> - Get a list of all record sets in the requested zone on AWS Route 53
 //   hubot route53 create record <zone-id> <record-name> <record-type> <field> - Create a new record set on AWS Route 53
 //   hubot route53 update record <zone-id> <record-name> <record-type> <field> - Update a record set on AWS Route 53
-//   hubot route53 delete record <zone-id> <record-name> <record-type> - Delete a record set on AWS Route 53
 //   hubot route53 point domain to cloudfront <cloudfront-domain> <zone-id> <record-name> - Point to a distribution on AWS CloudFront
 //
 // Author:
@@ -234,69 +232,6 @@ module.exports = function Route53Script(robot) {
         res,
         null,
         "Zone created successfully.",
-        "success"
-      );
-    }
-
-    function respond(response) {
-      return res.send(FormatJSON(response));
-    }
-
-    return Route53Promise;
-  });
-
-  robot.respond(/route53 delete zone (.*)/i, res => {
-    if (!CheckEnv(robot, "HUBOT_AWS_REGION")) {
-      return null;
-    }
-
-    if (!CheckEnv(robot, "HUBOT_AWS_ACCESS_KEY_ID")) {
-      return null;
-    }
-
-    if (!CheckEnv(robot, "HUBOT_AWS_SECRET_ACCESS_KEY")) {
-      return null;
-    }
-
-    const ZoneId = res.match[1];
-
-    const Route53Promise = Promise.resolve()
-      .tap(checkUserPermission)
-      .then(deleteZone)
-      .tap(success)
-      .then(respond)
-      .catch(ErrorHandler(robot, res, "route53 delete zone <zone>"));
-
-    function checkUserPermission() {
-      return Promise.resolve()
-        .then(CheckPermission(robot, res))
-        .tap(hasPermission => {
-          if (!hasPermission) {
-            return Route53Promise.cancel();
-          }
-          return null;
-        });
-    }
-
-    function deleteZone() {
-      // eslint-disable-next-line promise/avoid-new
-      return new Promise((resolve, reject) => {
-        Route53Client.deleteHostedZone({ Id: ZoneId }, function(err, data) {
-          if (err) {
-            return reject(err);
-          }
-
-          return resolve(data);
-        });
-      });
-    }
-
-    function success() {
-      return RespondToUser(
-        robot,
-        res,
-        null,
-        "Zone deleted successfully.",
         "success"
       );
     }
@@ -634,92 +569,6 @@ module.exports = function Route53Script(robot) {
         res,
         null,
         "DNS record updated successfully.",
-        "success"
-      );
-    }
-
-    function respond(response) {
-      return res.send(FormatJSON(response));
-    }
-
-    return Route53Promise;
-  });
-
-  robot.respond(/route53 delete record (.*) (.*) (.*)/i, res => {
-    if (!CheckEnv(robot, "HUBOT_AWS_REGION")) {
-      return null;
-    }
-
-    if (!CheckEnv(robot, "HUBOT_AWS_ACCESS_KEY_ID")) {
-      return null;
-    }
-
-    if (!CheckEnv(robot, "HUBOT_AWS_SECRET_ACCESS_KEY")) {
-      return null;
-    }
-
-    const ZoneId = res.match[1];
-    const RecordName = R.replace(/http:\/\//g, "", res.match[2]);
-    const RecordType = res.match[3];
-
-    const Route53Promise = Promise.resolve()
-      .tap(checkUserPermission)
-      .then(deleteRecord)
-      .tap(success)
-      .then(respond)
-      .catch(
-        ErrorHandler(
-          robot,
-          res,
-          "route53 delete record <zone-id> <record-name> <record-type>"
-        )
-      );
-
-    function checkUserPermission() {
-      return Promise.resolve()
-        .then(CheckPermission(robot, res))
-        .tap(hasPermission => {
-          if (!hasPermission) {
-            return Route53Promise.cancel();
-          }
-          return null;
-        });
-    }
-
-    function deleteRecord() {
-      const Body = {
-        ChangeBatch: {
-          Changes: [
-            {
-              Action: "DELETE",
-              ResourceRecordSet: {
-                Name: RecordName,
-                Type: RecordType
-              }
-            }
-          ]
-        },
-        HostedZoneId: ZoneId
-      };
-
-      // eslint-disable-next-line promise/avoid-new
-      return new Promise((resolve, reject) => {
-        Route53Client.changeResourceRecordSets(Body, function(err, data) {
-          if (err) {
-            return reject(err);
-          }
-
-          return resolve(data);
-        });
-      });
-    }
-
-    function success() {
-      return RespondToUser(
-        robot,
-        res,
-        null,
-        "DNS record deleted successfully.",
         "success"
       );
     }
