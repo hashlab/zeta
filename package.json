@@ -19,23 +19,25 @@
   },
   "scripts": {
     "lint": "bin/lint",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "make setup && make start"
   },
   "dependencies": {
+    "aws-sdk": "2.181.0",
+    "axios": "^0.18.0",
+    "bluebird": "^3.5.3",
+    "coffeescript": "^1.12.7",
     "cuid": "2.0.2",
-    "axios": "0.16.2",
-    "bluebird": "3.5.1",
-    "hubot": "2.19.0",
-    "hubot-diagnostics": "0.0.2",
-    "hubot-help": "0.2.2",
-    "hubot-redis-brain": "0.0.4",
-    "hubot-rules": "0.1.2",
-    "hubot-slack": "4.4.0",
+    "hubot": "^3.1.1",
+    "hubot-diagnostics": "^1.0.0",
+    "hubot-help": "^1.0.1",
+    "hubot-redis-brain": "^1.0.0",
+    "hubot-rules": "^1.0.0",
+    "hubot-slack": "^4.5.5",
     "moment": "2.19.3",
     "moment-timezone": "0.5.14",
     "prettyjson": "1.2.1",
-    "ramda": "0.25.0",
-    "aws-sdk": "2.181.0"
+    "ramda": "^0.26.0"
   },
   "devDependencies": {
     "eslint": "4.9.0",
