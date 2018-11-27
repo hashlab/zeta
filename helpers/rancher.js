@@ -26,20 +26,87 @@ const R = require("ramda");
 const Promise = require("bluebird");
 const CheckEnv = require("../helpers/check-env");
 const RespondToUser = require("../helpers/response");
-const githubApiUrl = "https://api.github.com";
+
+const rancherApiUrl = "https://controlplane.hashlab.network/v3";
 
 Promise.config({
   cancellation: true
 });
 
-exports.checkRepository = function checkRepository(robot, res, repository) {
-  if (!CheckEnv(robot, "GITHUB_TOKEN")) {
+exports.listProjects = function listProjects(robot, res) {
+  var auth = undefined;
+
+  if (checkVariables(robot)) {
     return null;
+  } else {
+    auth = setAuth();
   }
 
   return Promise.resolve()
     .tap(startCheck)
-    .then(checkRepository)
+    .then(listProjects)
+    .then(finishCheck);
+
+  function startCheck() {
+    return RespondToUser(robot, res, "", `Listing rancher projects...`, "info");
+  }
+
+  function listProjects() {
+    const request = robot
+      .http(`${rancherApiUrl}/projects`)
+      .header("Authorization", auth)
+      .get();
+
+    // eslint-disable-next-line promise/avoid-new
+    return new Promise((resolve, reject) => {
+      request((err, resp, body) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(JSON.parse(body));
+        }
+      });
+    });
+  }
+
+  function finishCheck(response) {
+    return Promise.resolve().then(sendMessage);
+
+    function sendMessage() {
+      if (R.has("data", response)) {
+        const projects = R.map(
+          project => `*${project.name}*: ${project.id}`,
+          response.data
+        );
+
+        projects.unshift("*Name*: ID\n");
+
+        return RespondToUser(robot, res, "", projects.join("\n"), "success");
+      } else {
+        return RespondToUser(
+          robot,
+          res,
+          false,
+          `Sorry, I couldn't list your rancher's projects`,
+          "error"
+        );
+      }
+    }
+  }
+};
+
+exports.listWorkloads = function listWorkloads(robot, res, projectId) {
+  var auth = undefined;
+
+  if (checkVariables(robot)) {
+    return null;
+  } else {
+    auth = setAuth();
+  }
+
+  return Promise.resolve()
+    .tap(startCheck)
+    .then(listWorkloads)
     .then(finishCheck);
 
   function startCheck() {
@@ -47,15 +114,15 @@ exports.checkRepository = function checkRepository(robot, res, repository) {
       robot,
       res,
       "",
-      `Checking if repository ${repository} exists...`,
+      `Listing project ${projectId} workloads...`,
       "info"
     );
   }
 
-  function checkRepository() {
+  function listWorkloads() {
     const request = robot
-      .http(`${githubApiUrl}/repos/hashlab/${repository}`)
-      .header("Authorization", `token ${process.env.GITHUB_TOKEN}`)
+      .http(`${rancherApiUrl}/projects/${projectId}/workloads`)
+      .header("Authorization", auth)
       .get();
 
     // eslint-disable-next-line promise/avoid-new
@@ -70,102 +137,47 @@ exports.checkRepository = function checkRepository(robot, res, repository) {
     });
   }
 
-  function finishCheck(repo) {
-    return Promise.resolve()
-      .then(sendMessage)
-      .then(respond);
+  function finishCheck(response) {
+    return Promise.resolve().then(sendMessage);
 
     function sendMessage() {
-      if (R.has("id", repo)) {
-        return RespondToUser(
-          robot,
-          res,
-          false,
-          `Repository ${repository} exists!`,
-          "success"
+      if (R.has("data", response)) {
+        const workloads = R.map(
+          workload =>
+            `*${workload.name}*:\n
+            _image:_ ${workload.containers[0].image}\n
+            _type:_ ${workload.type}\n
+            _namespace:_ ${workload.namespaceId}\n
+            _id:_ ${workload.id}\n`,
+          response.data
         );
+
+        return RespondToUser(robot, res, "", workloads.join("\n"), "success");
       } else {
         return RespondToUser(
           robot,
           res,
           false,
-          `Sorry, I couldn't find the repository ${repository}`,
+          `Sorry, I couldn't list your rancher's workloads`,
           "error"
         );
       }
     }
-
-    function respond() {
-      return R.has("id", repo);
-    }
   }
 };
 
-exports.checkCommit = function checkCommit(robot, res, repository, commit) {
-  if (!CheckEnv(robot, "GITHUB_TOKEN")) {
-    return null;
-  }
+function checkVariables(robot) {
+  return (
+    !CheckEnv(robot, "RANCHER_ACCESS_KEY") ||
+    !CheckEnv(robot, "RANCHER_SECRET_KEY")
+  );
+}
 
-  return Promise.resolve()
-    .then(startCheck)
-    .then(checkCommit)
-    .then(finishCheck);
-
-  function startCheck() {
-    return RespondToUser(
-      robot,
-      res,
-      false,
-      `Checking if commit ${commit} exists...`,
-      "info"
-    );
-  }
-
-  function checkCommit() {
-    const request = robot
-      .http(`${githubApiUrl}/repos/hashlab/${repository}/commits/${commit}`)
-      .header("Authorization", `token ${process.env.GITHUB_TOKEN}`)
-      .get();
-
-    // eslint-disable-next-line promise/avoid-new
-    return new Promise((resolve, reject) => {
-      request((err, resp, body) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(JSON.parse(body));
-        }
-      });
-    });
-  }
-
-  function finishCheck(gitHubCommit) {
-    return Promise.resolve()
-      .then(sendMessage)
-      .then(respond);
-
-    function sendMessage() {
-      if (R.has("sha", gitHubCommit)) {
-        return RespondToUser(
-          robot,
-          res,
-          false,
-          `Commit ${commit} exists!`,
-          "success"
-        );
-      } else {
-        return RespondToUser(
-          robot,
-          res,
-          false,
-          `Sorry, I couldn't find the specified commit ${commit}`,
-          "error"
-        );
-      }
-    }
-
-    function respond() {
-      return R.has("sha", gitHubCommit);
-    }
-  }
-};
+function setAuth() {
+  return (
+    "Basic " +
+    Buffer.from(
+      `${process.env.RANCHER_ACCESS_KEY}:${process.env.RANCHER_SECRET_KEY}`
+    ).toString("base64")
+  );
+}
