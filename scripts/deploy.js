@@ -24,23 +24,27 @@
 
 const R = require("ramda");
 const Promise = require("bluebird");
-const CheckEnv = require("../helpers/check-env");
 const UniqueId = require("../helpers/unique-id");
 const FormatJSON = require("../helpers/format-json");
 const RespondToUser = require("../helpers/response");
 const ErrorHandler = require("../helpers/error-handler");
 const CheckPermission = require("../helpers/check-permission");
+const GitHubHelper = require("../helpers/github");
 
 Promise.config({
   cancellation: true
 });
 
 module.exports = function deployScript(robot) {
-  robot.respond(/show/i, res => {
+  robot.respond(/deploy (.*):(.*) to production/i, res => {
+    const repository = res.match[1];
+    const commit = res.match[2];
+
     const deployPromise = Promise.resolve()
       .tap(checkUserPermission)
-      .then(respond)
-      .catch(ErrorHandler(robot, res, "deploy"));
+      .then(checkRepository)
+      .then(checkCommit)
+      .then(respond);
 
     function checkUserPermission() {
       return Promise.resolve()
@@ -53,8 +57,16 @@ module.exports = function deployScript(robot) {
         });
     }
 
-    function respond() {
-      return res.send(FormatJSON("Show"));
+    function checkRepository() {
+      return GitHubHelper.checkRepository(robot, res, repository);
+    }
+
+    function checkCommit() {
+      return GitHubHelper.checkCommit(robot, res, repository, commit);
+    }
+
+    function respond(response) {
+      return res.send(FormatJSON(response || ""));
     }
 
     return deployPromise;

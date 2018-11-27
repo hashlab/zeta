@@ -91,7 +91,7 @@ module.exports = function respondToUser(robot, response, error, message, type) {
     robot.logger.error(errResponse);
     robot.logger.error(errResponseStatusCode);
     robot.logger.error(error.response.data);
-  } else {
+  } else if (errMessage) {
     robot.logger.error(errMessage);
   }
 
@@ -133,6 +133,14 @@ module.exports = function respondToUser(robot, response, error, message, type) {
       if (type === "info") {
         robot.logger.info(message);
         return infoMessage(response, message);
+      }
+
+      return null;
+    })
+    .then(() => {
+      if (type === "error") {
+        robot.logger.info(message);
+        return errorMessage(response, message);
       }
 
       return null;
