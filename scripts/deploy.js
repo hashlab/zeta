@@ -22,12 +22,7 @@
 // Author:
 //   chris@hashlab.com.br
 
-const R = require("ramda");
 const Promise = require("bluebird");
-const UniqueId = require("../helpers/unique-id");
-const FormatJSON = require("../helpers/format-json");
-const RespondToUser = require("../helpers/response");
-const ErrorHandler = require("../helpers/error-handler");
 const CheckPermission = require("../helpers/check-permission");
 const GitHubHelper = require("../helpers/github");
 
@@ -43,8 +38,7 @@ module.exports = function deployScript(robot) {
     const deployPromise = Promise.resolve()
       .tap(checkUserPermission)
       .then(checkRepository)
-      .then(checkCommit)
-      .then(respond);
+      .then(checkCommit);
 
     function checkUserPermission() {
       return Promise.resolve()
@@ -63,10 +57,6 @@ module.exports = function deployScript(robot) {
 
     function checkCommit() {
       return GitHubHelper.checkCommit(robot, res, repository, commit);
-    }
-
-    function respond(response) {
-      return res.send(FormatJSON(response || ""));
     }
 
     return deployPromise;
