@@ -43,12 +43,12 @@ exports.listProjects = function listProjects(robot, res) {
   }
 
   return Promise.resolve()
-    .tap(startCheck)
+    .tap(startListing)
     .then(listProjects)
-    .then(finishCheck);
+    .then(finishListing);
 
-  function startCheck() {
-    return RespondToUser(robot, res, "", `Listing rancher projects...`, "info");
+  function startListing() {
+    return RespondToUser(robot, res, "", `Listing Rancher projects...`, "info");
   }
 
   function listProjects() {
@@ -69,17 +69,17 @@ exports.listProjects = function listProjects(robot, res) {
     });
   }
 
-  function finishCheck(response) {
+  function finishListing(response) {
     return Promise.resolve().then(sendMessage);
 
     function sendMessage() {
       if (R.has("data", response)) {
         const projects = R.map(
-          project => `*${project.name}*: ${project.id}`,
+          project => `*${project.name}*:/n
+          _ID:_ ${project.id}\n
+          _State:_ ${project.state}`,
           response.data
         );
-
-        projects.unshift("*Name*: ID\n");
 
         return RespondToUser(robot, res, "", projects.join("\n"), "success");
       } else {
@@ -87,10 +87,87 @@ exports.listProjects = function listProjects(robot, res) {
           robot,
           res,
           false,
-          `Sorry, I couldn't list your rancher's projects`,
+          `Sorry, I couldn't list your Rancher projects`,
           "error"
         );
       }
+    }
+  }
+};
+
+exports.checkProject = function checkProject(robot, res, project) {
+  var auth = undefined;
+
+  if (checkVariables(robot)) {
+    return null;
+  } else {
+    auth = setAuth();
+  }
+
+  return Promise.resolve()
+    .tap(startCheck)
+    .then(checkProject)
+    .then(finishCheck);
+
+  function startCheck() {
+    return RespondToUser(
+      robot,
+      res,
+      "",
+      `Checking if project ${project} exists...`,
+      "info"
+    );
+  }
+
+  function checkProject() {
+    const request = robot
+      .http(`${rancherApiUrl}/projects/?name=${project}`)
+      .header("Authorization", auth)
+      .get();
+
+    // eslint-disable-next-line promise/avoid-new
+    return new Promise((resolve, reject) => {
+      request((err, resp, body) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(JSON.parse(body).data);
+        }
+      });
+    });
+  }
+
+  function finishCheck(response) {
+    let proj;
+
+    return Promise.resolve()
+      .then(sendMessage)
+      .then(respond);
+
+    function sendMessage() {
+      if (response.length > 0) {
+        proj = response[0];
+
+        return RespondToUser(
+          robot,
+          res,
+          false,
+          `Found Rancher project ${project}`,
+          "success"
+        );
+      } else {
+        return RespondToUser(
+          robot,
+          res,
+          false,
+          `Sorry, I couldn't find your Rancher project ${project}`,
+          "error"
+        );
+      }
+    }
+
+    function respond() {
+      return proj;
     }
   }
 };
@@ -105,11 +182,11 @@ exports.listWorkloads = function listWorkloads(robot, res, projectId) {
   }
 
   return Promise.resolve()
-    .tap(startCheck)
+    .tap(startListing)
     .then(listWorkloads)
-    .then(finishCheck);
+    .then(finishListing);
 
-  function startCheck() {
+  function startListing() {
     return RespondToUser(
       robot,
       res,
@@ -137,7 +214,7 @@ exports.listWorkloads = function listWorkloads(robot, res, projectId) {
     });
   }
 
-  function finishCheck(response) {
+  function finishListing(response) {
     return Promise.resolve().then(sendMessage);
 
     function sendMessage() {
@@ -162,6 +239,95 @@ exports.listWorkloads = function listWorkloads(robot, res, projectId) {
           "error"
         );
       }
+    }
+  }
+};
+
+exports.checkWorkload = function checkWorkload(
+  robot,
+  res,
+  project,
+  workloadType,
+  workload
+) {
+  var auth = undefined;
+
+  if (checkVariables(robot)) {
+    return null;
+  } else {
+    auth = setAuth();
+  }
+
+  return Promise.resolve()
+    .tap(startCheck)
+    .then(checkWorkload)
+    .then(finishCheck);
+
+  function startCheck() {
+    return RespondToUser(
+      robot,
+      res,
+      "",
+      `Checking if workload ${workload} exists...`,
+      "info"
+    );
+  }
+
+  function checkWorkload() {
+    const request = robot
+      .http(
+        `${rancherApiUrl}/projects/${
+          project.id
+        }/workloads?${workloadType}=${workload}`
+      )
+      .header("Authorization", auth)
+      .get();
+
+    // eslint-disable-next-line promise/avoid-new
+    return new Promise((resolve, reject) => {
+      request((err, resp, body) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(JSON.parse(body).data);
+        }
+      });
+    });
+  }
+
+  function finishCheck(response) {
+    let work;
+
+    return Promise.resolve()
+      .then(sendMessage)
+      .then(respond);
+
+    function sendMessage() {
+      if (response.length > 0) {
+        work = response[0];
+
+        return RespondToUser(
+          robot,
+          res,
+          false,
+          `Found Rancher project workload ${workload}`,
+          "success"
+        );
+      } else {
+        return RespondToUser(
+          robot,
+          res,
+          false,
+          `Sorry, I couldn't find your Rancher project ${
+            project.id
+          } workload ${workload}`,
+          "error"
+        );
+      }
+    }
+
+    function respond() {
+      return work;
     }
   }
 };

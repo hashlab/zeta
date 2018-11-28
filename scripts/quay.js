@@ -24,7 +24,7 @@
 
 const Promise = require("bluebird");
 const CheckPermission = require("../helpers/check-permission");
-const RancherHelper = require("../helpers/rancher");
+const QuayHelper = require("../helpers/quay");
 
 Promise.config({
   cancellation: true
