@@ -31,51 +31,26 @@ Promise.config({
 });
 
 module.exports = function rancherScript(robot) {
-  robot.respond(/list rancher projects/i, res => {
-    const listProjectsPromise = Promise.resolve()
+  robot.respond(/list (quay|Quay) repositories/i, res => {
+    const listRepositoriesPromise = Promise.resolve()
       .tap(checkUserPermission)
-      .then(listProjects);
+      .then(listRepositories);
 
     function checkUserPermission() {
       return Promise.resolve()
         .then(CheckPermission(robot, res))
         .tap(hasPermission => {
           if (!hasPermission) {
-            return listProjectsPromise.cancel();
+            return listRepositoriesPromise.cancel();
           }
           return null;
         });
     }
 
-    function listProjects() {
-      return RancherHelper.listProjects(robot, res);
+    function listRepositories() {
+      return QuayHelper.listRepositories(robot, res);
     }
 
-    return listProjectsPromise;
-  });
-
-  robot.respond(/list rancher project (.*) workloads/i, res => {
-    const projectId = res.match[1];
-
-    const listWorkloadsPromise = Promise.resolve()
-      .tap(checkUserPermission)
-      .then(listWorkloads);
-
-    function checkUserPermission() {
-      return Promise.resolve()
-        .then(CheckPermission(robot, res))
-        .tap(hasPermission => {
-          if (!hasPermission) {
-            return listWorkloadsPromise.cancel();
-          }
-          return null;
-        });
-    }
-
-    function listWorkloads() {
-      return RancherHelper.listWorkloads(robot, res, projectId);
-    }
-
-    return listWorkloadsPromise;
+    return listRepositoriesPromise;
   });
 };

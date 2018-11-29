@@ -43,14 +43,14 @@ exports.checkRepository = function checkRepository(robot, res, repository) {
     .then(finishCheck);
 
   function startCheck() {
-    // return RespondToUser(
-    //   robot,
-    //   res,
-    //   "",
-    //   `Checking if repository ${repository} exists...`,
-    //   "info"
-    // );
-    res.send(`Checking if repository ${repository} exists...`);
+    return RespondToUser(
+      robot,
+      res,
+      "",
+      `Checking if repository ${repository} exists...`,
+      "info"
+    );
+    // res.send(`Checking if repository ${repository} exists...`);
   }
 
   function checkRepository() {

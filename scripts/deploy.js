@@ -35,7 +35,7 @@ Promise.config({
 
 module.exports = function deployScript(robot) {
   robot.respond(
-    /deploy ([\w-]+):([a-z0-9]{7,}) at ([\w-]+) to workload (name|namespaceId) ([\w-]+) at (Staging|Production)/i,
+    /deploy ([\w-]+):([a-z0-9]{7,}) at ([\w-]+) to workload (name|namespaceId) ([\w-]+) in (Staging|Production)/i,
     res => {
       const repository = res.match[1];
       const commit = res.match[2].substring(0, 7);
@@ -50,6 +50,7 @@ module.exports = function deployScript(robot) {
         .then(checkCommit)
         .then(checkRancherProject)
         .then(checkRancherWorkload)
+        .then(checkQuayRepository)
         .then(checkQuayImage)
         .then(deploy);
 
@@ -136,13 +137,29 @@ module.exports = function deployScript(robot) {
         }
       }
 
+      function checkQuayRepository() {
+        return Promise.resolve()
+          .then(checkQuay)
+          .then(decide);
+
+        function checkQuay() {
+          return QuayHelper.checkRepository(robot, res, quayRepository);
+        }
+
+        function decide(repo) {
+          if (!repo) {
+            return abort();
+          }
+        }
+      }
+
       function checkQuayImage() {
         return Promise.resolve()
           .then(checkQuay)
           .then(decide);
 
         function checkQuay() {
-          return QuayHelper.checkImage(robot, res, quayRepository);
+          return QuayHelper.checkImage(robot, res, quayRepository, commit);
         }
 
         function decide(image) {

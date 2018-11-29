@@ -31,7 +31,7 @@ Promise.config({
 });
 
 module.exports = function rancherScript(robot) {
-  robot.respond(/list rancher projects/i, res => {
+  robot.respond(/list (rancher|Rancher) projects/i, res => {
     const listProjectsPromise = Promise.resolve()
       .tap(checkUserPermission)
       .then(listProjects);
@@ -54,8 +54,8 @@ module.exports = function rancherScript(robot) {
     return listProjectsPromise;
   });
 
-  robot.respond(/list rancher project (.*) workloads/i, res => {
-    const projectId = res.match[1];
+  robot.respond(/list (rancher|Rancher) project ([\w-:]+) workloads/i, res => {
+    const projectId = res.match[2];
 
     const listWorkloadsPromise = Promise.resolve()
       .tap(checkUserPermission)

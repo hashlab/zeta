@@ -75,9 +75,9 @@ exports.listProjects = function listProjects(robot, res) {
     function sendMessage() {
       if (R.has("data", response)) {
         const projects = R.map(
-          project => `*${project.name}*:/n
-          _ID:_ ${project.id}\n
-          _State:_ ${project.state}`,
+          project => `*${project.name}*:\n
+        _ID:_ ${project.id}\n
+        _State:_ ${project.state}`,
           response.data
         );
 
@@ -114,14 +114,17 @@ exports.checkProject = function checkProject(robot, res, project) {
       robot,
       res,
       "",
-      `Checking if project ${project} exists...`,
+      `Checking if Rancher project ${project} exists...`,
       "info"
     );
   }
 
   function checkProject() {
     const request = robot
-      .http(`${rancherApiUrl}/projects/?name=${project}`)
+      .http(`${rancherApiUrl}/projects`)
+      .query({
+        name: project
+      })
       .header("Authorization", auth)
       .get();
 
@@ -191,7 +194,7 @@ exports.listWorkloads = function listWorkloads(robot, res, projectId) {
       robot,
       res,
       "",
-      `Listing project ${projectId} workloads...`,
+      `Listing Rancher project ${projectId} workloads...`,
       "info"
     );
   }
@@ -235,7 +238,7 @@ exports.listWorkloads = function listWorkloads(robot, res, projectId) {
           robot,
           res,
           false,
-          `Sorry, I couldn't list your rancher's workloads`,
+          `Sorry, I couldn't list your Rancher's workloads`,
           "error"
         );
       }
@@ -268,18 +271,17 @@ exports.checkWorkload = function checkWorkload(
       robot,
       res,
       "",
-      `Checking if workload ${workload} exists...`,
+      `Checking if Rancher workload ${workload} exists...`,
       "info"
     );
   }
 
   function checkWorkload() {
     const request = robot
-      .http(
-        `${rancherApiUrl}/projects/${
-          project.id
-        }/workloads?${workloadType}=${workload}`
-      )
+      .http(`${rancherApiUrl}/projects/${project.id}/workloads`)
+      .query({
+        [workloadType]: workload
+      })
       .header("Authorization", auth)
       .get();
 
