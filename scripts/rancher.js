@@ -1,26 +1,19 @@
 // Description:
-//   Script for managing buckets and policies on AWS S3
+//   Helper to interact with Rancher API
 //
 // Dependencies:
-//   "ramda": "0.25.0"
-//   "axios": "0.16.2"
-//   "bluebird": "3.5.1"
-//   "aws-sdk": "2.181.0"
+//   "bluebird": "^3.5.3"
 //
 // Configuration:
-//   HUBOT_AWS_REGION
-//   HUBOT_AWS_ACCESS_KEY_ID
-//   HUBOT_AWS_SECRET_ACCESS_KEY
 //
 // Commands:
-//   hubot s3 buckets - Get a list of all buckets on AWS S3
-//   hubot s3 create bucket <bucket-name> <is-private> - Create a new bucket on AWS S3
-//   hubot s3 enable website for bucket <bucket-name> - Enable static website mode for a bucket on AWS S3
-//   hubot s3 set policy for bucket <bucket-name> - Set website policy for a bucket on AWS S3
-//   hubot s3 get url for bucket <bucket-name> - Get the url of a bucket website on AWS S3
+//   list (rancher|Rancher) projects - Get a list of all Hash's projects on Rancher
+//   list (rancher|Rancher) project <rancher-project-id> workloads - Get a workloads list of all specified Hash's project on Rancher
+//   (rollback|pause|resume) (rancher|Rancher) project <project-id> workload <workload-id> (revision|latest|previous) <revision-name> - Rollback the specified workload to the corresponding revision. If rollback to previous or latest, revision-id is not required. Pause and resume will always execute to current.
+//   list (rancher|Rancher) project <project-id> workload <workload-id> revisions - Get a revisions list of the specified project and workload
 //
 // Author:
-//   chris@hashlab.com.br
+//   caio.elias@hashlab.com.br
 
 const Promise = require("bluebird");
 const CheckPermission = require("../helpers/check-permission");
@@ -31,30 +24,7 @@ Promise.config({
 });
 
 module.exports = function rancherScript(robot) {
-  robot.respond(/list (rancher|Rancher) projects/i, res => {
-    const listProjectsPromise = Promise.resolve()
-      .tap(checkUserPermission)
-      .then(listProjects);
-
-    function checkUserPermission() {
-      return Promise.resolve()
-        .then(CheckPermission(robot, res))
-        .tap(hasPermission => {
-          if (!hasPermission) {
-            return listProjectsPromise.cancel();
-          }
-          return null;
-        });
-    }
-
-    function listProjects() {
-      return RancherHelper.listProjects(robot, res);
-    }
-
-    return listProjectsPromise;
-  });
-
-  robot.respond(/list (rancher|Rancher) project ([\w-:]+) workloads/i, res => {
+  robot.respond(/list (rancher|Rancher) project ([\w:-]+) workloads/i, res => {
     const projectId = res.match[2];
 
     const listWorkloadsPromise = Promise.resolve()
@@ -78,4 +48,96 @@ module.exports = function rancherScript(robot) {
 
     return listWorkloadsPromise;
   });
+
+  robot.respond(/list (rancher|Rancher) projects/i, res => {
+    const listProjectsPromise = Promise.resolve()
+      .tap(checkUserPermission)
+      .then(listProjects);
+
+    function checkUserPermission() {
+      return Promise.resolve()
+        .then(CheckPermission(robot, res))
+        .tap(hasPermission => {
+          if (!hasPermission) {
+            return listProjectsPromise.cancel();
+          }
+          return null;
+        });
+    }
+
+    function listProjects() {
+      return RancherHelper.listProjects(robot, res);
+    }
+
+    return listProjectsPromise;
+  });
+
+  robot.respond(
+    /(rollback|pause|resume) (rancher|Rancher) project ([\w:-]+) workload ([\w:-]+)\s*(revision|latest|previous)*\s*([\w:-]*)/i,
+    res => {
+      const action = res.match[1];
+      const projectId = res.match[3];
+      const workloadId = res.match[4];
+      const rollbackType = res.match[5];
+      const revisionName = res.match[6];
+
+      const actionPromise = Promise.resolve()
+        .tap(checkUserPermission)
+        .then(performAction);
+
+      function checkUserPermission() {
+        return Promise.resolve()
+          .then(CheckPermission(robot, res))
+          .tap(hasPermission => {
+            if (!hasPermission) {
+              return actionPromise.cancel();
+            }
+            return null;
+          });
+      }
+
+      function performAction() {
+        return RancherHelper.performAction(
+          robot,
+          res,
+          action,
+          workloadId,
+          projectId,
+          revisionName,
+          rollbackType
+        );
+      }
+
+      return actionPromise;
+    }
+  );
+
+  robot.respond(
+    /list (rancher|Rancher) project ([\w:-]+) workload ([\w:-]+) revisions/i,
+    res => {
+      const workloadId = res.match[3];
+      const projectId = res.match[2];
+
+      const listProjectsPromise = Promise.resolve()
+        .tap(checkUserPermission)
+        .then(listRevisions);
+
+      function checkUserPermission() {
+        return Promise.resolve()
+          .then(CheckPermission(robot, res))
+          .tap(hasPermission => {
+            if (!hasPermission) {
+              return listProjectsPromise.cancel();
+            }
+            return null;
+          });
+      }
+
+      function listRevisions() {
+        return RancherHelper.listRevisions(robot, res, workloadId, projectId);
+      }
+
+      return listProjectsPromise;
+    }
+  );
 };

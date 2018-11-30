@@ -1,40 +1,28 @@
 // Description:
-//   Script for managing buckets and policies on AWS S3
+//   Helper to interact with Quay API
 //
 // Dependencies:
-//   "ramda": "0.25.0"
-//   "axios": "0.16.2"
-//   "bluebird": "3.5.1"
-//   "aws-sdk": "2.181.0"
+//   "ramda": "^0.26.0"
+//   "bluebird": "^3.5.3"
 //
 // Configuration:
-//   HUBOT_AWS_REGION
-//   HUBOT_AWS_ACCESS_KEY_ID
-//   HUBOT_AWS_SECRET_ACCESS_KEY
-//
-// Commands:
-//   hubot s3 buckets - Get a list of all buckets on AWS S3
-//   hubot s3 create bucket <bucket-name> <is-private> - Create a new bucket on AWS S3
-//   hubot s3 enable website for bucket <bucket-name> - Enable static website mode for a bucket on AWS S3
-//   hubot s3 set policy for bucket <bucket-name> - Set website policy for a bucket on AWS S3
-//   hubot s3 get url for bucket <bucket-name> - Get the url of a bucket website on AWS S3
+//   QUAY_TOKEN
+//   QUAY_API_URL
 //
 // Author:
-//   chris@hashlab.com.br
+//   caio.elias@hashlab.com.br
 
 const R = require("ramda");
 const Promise = require("bluebird");
 const CheckEnv = require("./check-env");
 const RespondToUser = require("./response");
 
-const quayApiUrl = "https://quay.io/api/v1";
-
 Promise.config({
   cancellation: true
 });
 
 exports.checkImage = function checkImage(robot, res, quayRepository, commit) {
-  if (!CheckEnv(robot, "QUAY_TOKEN")) {
+  if (!CheckEnv(robot, "QUAY_TOKEN") || !CheckEnv(robot, "QUAY_API_URL")) {
     return null;
   }
 
@@ -47,15 +35,16 @@ exports.checkImage = function checkImage(robot, res, quayRepository, commit) {
     return RespondToUser(
       robot,
       res,
-      "",
-      `Checking Quay if corresponding image exists...`,
+      false,
+      "Checking Quay if corresponding image exists...",
       "info"
     );
   }
 
   function checkTags() {
     const request = robot
-      .http(`${quayApiUrl}/repository/hashlab/${quayRepository}/tag`)
+      .http(process.env.QUAY_API_URL)
+      .path(`repository/hashlab/${quayRepository}/tag`)
       .query({
         specificTag: commit,
         onlyActiveTags: true
@@ -132,7 +121,7 @@ exports.checkImage = function checkImage(robot, res, quayRepository, commit) {
 };
 
 exports.checkRepository = function checkRepository(robot, res, quayRepository) {
-  if (!CheckEnv(robot, "QUAY_TOKEN")) {
+  if (!CheckEnv(robot, "QUAY_TOKEN") || !CheckEnv(robot, "QUAY_API_URL")) {
     return null;
   }
 
@@ -145,15 +134,16 @@ exports.checkRepository = function checkRepository(robot, res, quayRepository) {
     return RespondToUser(
       robot,
       res,
-      "",
-      `Checking Quay if repository exists...`,
+      false,
+      "Checking Quay if repository exists...",
       "info"
     );
   }
 
   function checkRepository() {
     const request = robot
-      .http(`${quayApiUrl}/repository/hashlab/${quayRepository}`)
+      .http(process.env.QUAY_API_URL)
+      .path(`repository/hashlab/${quayRepository}`)
       .header("Authorization", `Bearer ${process.env.QUAY_TOKEN}`)
       .get();
 
@@ -223,7 +213,7 @@ exports.checkRepository = function checkRepository(robot, res, quayRepository) {
 };
 
 exports.listRepositories = function listRepositories(robot, res) {
-  if (!CheckEnv(robot, "QUAY_TOKEN")) {
+  if (!CheckEnv(robot, "QUAY_TOKEN") || !CheckEnv(robot, "QUAY_API_URL")) {
     return null;
   }
 
@@ -236,7 +226,7 @@ exports.listRepositories = function listRepositories(robot, res) {
     return RespondToUser(
       robot,
       res,
-      "",
+      false,
       "Listing Quay repositories...",
       "info"
     );
@@ -244,7 +234,8 @@ exports.listRepositories = function listRepositories(robot, res) {
 
   function listRepositories() {
     const request = robot
-      .http(`${quayApiUrl}/repository`)
+      .http(process.env.QUAY_API_URL)
+      .path("repository")
       .header("Authorization", `Bearer ${process.env.QUAY_TOKEN}`)
       .query({
         namespace: "hashlab"

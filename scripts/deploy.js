@@ -1,26 +1,16 @@
 // Description:
-//   Script for managing buckets and policies on AWS S3
+//   Script for deploying Hash's infrastructure to Rancher
 //
 // Dependencies:
-//   "ramda": "0.25.0"
-//   "axios": "0.16.2"
-//   "bluebird": "3.5.1"
-//   "aws-sdk": "2.181.0"
+//   "bluebird": "^3.5.3"
 //
 // Configuration:
-//   HUBOT_AWS_REGION
-//   HUBOT_AWS_ACCESS_KEY_ID
-//   HUBOT_AWS_SECRET_ACCESS_KEY
 //
 // Commands:
-//   hubot s3 buckets - Get a list of all buckets on AWS S3
-//   hubot s3 create bucket <bucket-name> <is-private> - Create a new bucket on AWS S3
-//   hubot s3 enable website for bucket <bucket-name> - Enable static website mode for a bucket on AWS S3
-//   hubot s3 set policy for bucket <bucket-name> - Set website policy for a bucket on AWS S3
-//   hubot s3 get url for bucket <bucket-name> - Get the url of a bucket website on AWS S3
+//   deploy <github-repository>:<github-commit> at <quay-repository> to workload name <rancher-workload> in (Staging|Production) - Deploys the specified commit to the specified workload at Rancher
 //
 // Author:
-//   chris@hashlab.com.br
+//   caio.elias@hashlab.com.br
 
 const Promise = require("bluebird");
 const CheckPermission = require("../helpers/check-permission");
@@ -35,7 +25,7 @@ Promise.config({
 
 module.exports = function deployScript(robot) {
   robot.respond(
-    /deploy ([\w-]+):([a-z0-9]{7,}) at ([\w-]+) to workload (name|namespaceId) ([\w-]+) in (Staging|Production)/i,
+    /deploy ([\w-]+):([a-z0-9]{7,}) at ([\w-]+) to workload (name) ([\w-]+) in (Staging|Production)/i,
     res => {
       const repository = res.match[1];
       const commit = res.match[2].substring(0, 7);
@@ -170,13 +160,22 @@ module.exports = function deployScript(robot) {
       }
 
       function deploy() {
-        return RespondToUser(
-          robot,
-          res,
-          "",
-          ":hash_logo: All good to deploy :rocket:",
-          "info"
-        );
+        return Promise.resolve().then(sendMessage);
+        // .then(deploy);
+
+        function sendMessage() {
+          return RespondToUser(
+            robot,
+            res,
+            false,
+            ":hash_logo: All good to deploy :rocket:",
+            "info"
+          );
+        }
+
+        // function deploy() {
+        //   return RancherHelper.performAction(robot, res, "deploy", )
+        // }
       }
 
       function abort() {

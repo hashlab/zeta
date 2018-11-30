@@ -1,26 +1,17 @@
 // Description:
-//   Script for managing buckets and policies on AWS S3
+//   Script for managing Quay repositories and tags
 //
 // Dependencies:
-//   "ramda": "0.25.0"
-//   "axios": "0.16.2"
-//   "bluebird": "3.5.1"
-//   "aws-sdk": "2.181.0"
+//   "ramda": "^0.26.0"
+//   "bluebird": "^3.5.3"
 //
 // Configuration:
-//   HUBOT_AWS_REGION
-//   HUBOT_AWS_ACCESS_KEY_ID
-//   HUBOT_AWS_SECRET_ACCESS_KEY
 //
 // Commands:
-//   hubot s3 buckets - Get a list of all buckets on AWS S3
-//   hubot s3 create bucket <bucket-name> <is-private> - Create a new bucket on AWS S3
-//   hubot s3 enable website for bucket <bucket-name> - Enable static website mode for a bucket on AWS S3
-//   hubot s3 set policy for bucket <bucket-name> - Set website policy for a bucket on AWS S3
-//   hubot s3 get url for bucket <bucket-name> - Get the url of a bucket website on AWS S3
+//   list (quay|Quay) (repositories|repos) - Get a list of all Hash's Quay repositories
 //
 // Author:
-//   chris@hashlab.com.br
+//   caio.elias@hashlab.com.br
 
 const Promise = require("bluebird");
 const CheckPermission = require("../helpers/check-permission");
@@ -31,7 +22,7 @@ Promise.config({
 });
 
 module.exports = function rancherScript(robot) {
-  robot.respond(/list (quay|Quay) repositories/i, res => {
+  robot.respond(/list (quay|Quay) (repositories|repos)/i, res => {
     const listRepositoriesPromise = Promise.resolve()
       .tap(checkUserPermission)
       .then(listRepositories);

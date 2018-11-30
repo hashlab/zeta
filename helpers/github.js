@@ -1,39 +1,29 @@
 // Description:
-//   Script for managing buckets and policies on AWS S3
+//   Helper to interact with Github API
 //
 // Dependencies:
-//   "ramda": "0.25.0"
-//   "axios": "0.16.2"
-//   "bluebird": "3.5.1"
-//   "aws-sdk": "2.181.0"
+//   "ramda": "^0.26.0"
+//   "bluebird": "^3.5.3"
 //
 // Configuration:
-//   HUBOT_AWS_REGION
-//   HUBOT_AWS_ACCESS_KEY_ID
-//   HUBOT_AWS_SECRET_ACCESS_KEY
-//
-// Commands:
-//   hubot s3 buckets - Get a list of all buckets on AWS S3
-//   hubot s3 create bucket <bucket-name> <is-private> - Create a new bucket on AWS S3
-//   hubot s3 enable website for bucket <bucket-name> - Enable static website mode for a bucket on AWS S3
-//   hubot s3 set policy for bucket <bucket-name> - Set website policy for a bucket on AWS S3
-//   hubot s3 get url for bucket <bucket-name> - Get the url of a bucket website on AWS S3
+//   GITHUB_API_URL
+//   GITHUB_TOKEN
 //
 // Author:
-//   chris@hashlab.com.br
+//   caio.elias@hashlab.com.br
 
 const R = require("ramda");
+const moment = require("moment");
 const Promise = require("bluebird");
 const CheckEnv = require("../helpers/check-env");
 const RespondToUser = require("../helpers/response");
-const githubApiUrl = "https://api.github.com";
 
 Promise.config({
   cancellation: true
 });
 
 exports.checkRepository = function checkRepository(robot, res, repository) {
-  if (!CheckEnv(robot, "GITHUB_TOKEN")) {
+  if (!CheckEnv(robot, "GITHUB_TOKEN") || !CheckEnv(robot, "GITHUB_API_URL")) {
     return null;
   }
 
@@ -46,7 +36,7 @@ exports.checkRepository = function checkRepository(robot, res, repository) {
     return RespondToUser(
       robot,
       res,
-      "",
+      false,
       `Checking if repository ${repository} exists...`,
       "info"
     );
@@ -55,7 +45,8 @@ exports.checkRepository = function checkRepository(robot, res, repository) {
 
   function checkRepository() {
     const request = robot
-      .http(`${githubApiUrl}/repos/hashlab/${repository}`)
+      .http(process.env.GITHUB_API_URL)
+      .path(`repos/hashlab/${repository}`)
       .header("Authorization", `token ${process.env.GITHUB_TOKEN}`)
       .get();
 
@@ -102,8 +93,75 @@ exports.checkRepository = function checkRepository(robot, res, repository) {
   }
 };
 
+exports.listRepositories = function listRepositories(robot, res) {
+  if (!CheckEnv(robot, "GITHUB_TOKEN") || !CheckEnv(robot, "GITHUB_API_URL")) {
+    return null;
+  }
+
+  return Promise.resolve()
+    .tap(startList)
+    .then(listRepositories)
+    .then(finishList);
+
+  function startList() {
+    return RespondToUser(robot, res, "", "Listing repositories...", "info");
+  }
+
+  function listRepositories() {
+    const request = robot
+      .http(process.env.GITHUB_API_URL)
+      .path("orgs/hashlab/repos")
+      .header("Authorization", `token ${process.env.GITHUB_TOKEN}`)
+      .get();
+
+    // eslint-disable-next-line promise/avoid-new
+    return new Promise((resolve, reject) => {
+      request((err, resp, body) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(JSON.parse(body));
+        }
+      });
+    });
+  }
+
+  function finishList(response) {
+    return Promise.resolve().then(sendMessage);
+
+    function sendMessage() {
+      if (response.message !== "Not Found") {
+        const repositories = R.map(
+          repo =>
+            `*${repo.name}*:\n
+            _private:_ ${repo.private}\n
+            _open issues:_ ${repo.open_issues_count}\n
+            _description:_ ${repo.description}\n`,
+          response
+        );
+
+        return RespondToUser(
+          robot,
+          res,
+          false,
+          repositories.join("\n"),
+          "success"
+        );
+      } else {
+        return RespondToUser(
+          robot,
+          res,
+          false,
+          "Sorry, I couldn't list your repositories",
+          "error"
+        );
+      }
+    }
+  }
+};
+
 exports.checkCommit = function checkCommit(robot, res, repository, commit) {
-  if (!CheckEnv(robot, "GITHUB_TOKEN")) {
+  if (!CheckEnv(robot, "GITHUB_TOKEN") || !CheckEnv(robot, "GITHUB_API_URL")) {
     return null;
   }
 
@@ -124,7 +182,8 @@ exports.checkCommit = function checkCommit(robot, res, repository, commit) {
 
   function checkCommit() {
     const request = robot
-      .http(`${githubApiUrl}/repos/hashlab/${repository}/commits/${commit}`)
+      .http(process.env.GITHUB_API_URL)
+      .path(`repos/hashlab/${repository}/commits/${commit}`)
       .header("Authorization", `token ${process.env.GITHUB_TOKEN}`)
       .get();
 
@@ -167,6 +226,77 @@ exports.checkCommit = function checkCommit(robot, res, repository, commit) {
 
     function respond() {
       return R.has("sha", gitHubCommit);
+    }
+  }
+};
+
+exports.listCommits = function listCommits(robot, res, repository) {
+  if (!CheckEnv(robot, "GITHUB_TOKEN") || !CheckEnv(robot, "GITHUB_API_URL")) {
+    return null;
+  }
+
+  return Promise.resolve()
+    .tap(startList)
+    .then(listCommits)
+    .then(finishList);
+
+  function startList() {
+    return RespondToUser(
+      robot,
+      res,
+      false,
+      `Listing repository ${repository} commits...`,
+      "info"
+    );
+  }
+
+  function listCommits() {
+    const request = robot
+      .http(process.env.GITHUB_API_URL)
+      .path(`repos/hashlab/${repository}/commits`)
+      .header("Authorization", `token ${process.env.GITHUB_TOKEN}`)
+      .get();
+
+    // eslint-disable-next-line promise/avoid-new
+    return new Promise((resolve, reject) => {
+      request((err, resp, body) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(JSON.parse(body));
+        }
+      });
+    });
+  }
+
+  function finishList(response) {
+    return Promise.resolve().then(sendMessage);
+
+    function sendMessage() {
+      if (response.message !== "Not Found") {
+        const commits = R.map(
+          commit =>
+            `*${commit.sha}*:\n
+            _author:_ ${commit.commit.author.name} - ${
+              commit.commit.author.email
+            }\n
+            _date:_ ${moment(commit.commit.author.date).format(
+              "HH:mm DD-MM-YYYY"
+            )}\n
+            _message:_ ${commit.commit.message}\n`,
+          response
+        );
+
+        return RespondToUser(robot, res, "", commits.join("\n"), "success");
+      } else {
+        return RespondToUser(
+          robot,
+          res,
+          false,
+          `Sorry, I couldn't list repository ${repository} commits`,
+          "error"
+        );
+      }
     }
   }
 };
