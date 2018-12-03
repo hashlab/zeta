@@ -9,7 +9,7 @@
 // Commands:
 //   list (rancher|Rancher) projects - Get a list of all Hash's projects on Rancher
 //   list (rancher|Rancher) project <rancher-project-id> workloads - Get a workloads list of all specified Hash's project on Rancher
-//   (rollback|pause|resume) (rancher|Rancher) project <project-id> workload <workload-id> (revision|latest|previous) <revision-name> - Rollback the specified workload to the corresponding revision. If rollback to previous or latest, revision-id is not required. Pause and resume will always execute to current.
+//   (rollback|pause|resume) (rancher|Rancher) project <project-id> workload <workload-id> (revision|latest|previous) <revision-name> - Rollback the specified workload to the corresponding revision. If rolling-back to previous or latest, revision-id is not required. Pause and resume will always execute to current image.
 //   list (rancher|Rancher) project <project-id> workload <workload-id> revisions - Get a revisions list of the specified project and workload
 //
 // Author:
@@ -18,6 +18,7 @@
 const Promise = require("bluebird");
 const CheckPermission = require("../helpers/check-permission");
 const RancherHelper = require("../helpers/rancher");
+const RespondToUser = require("../helpers/response");
 
 Promise.config({
   cancellation: true
@@ -29,7 +30,8 @@ module.exports = function rancherScript(robot) {
 
     const listWorkloadsPromise = Promise.resolve()
       .tap(checkUserPermission)
-      .then(listWorkloads);
+      .then(listWorkloads)
+      .catch(sendError);
 
     function checkUserPermission() {
       return Promise.resolve()
@@ -46,13 +48,30 @@ module.exports = function rancherScript(robot) {
       return RancherHelper.listWorkloads(robot, res, projectId);
     }
 
+    function abort() {
+      listWorkloadsPromise.cancel();
+
+      return RespondToUser(robot, res, "", "Aborting execution.", "info");
+    }
+
+    function sendError(error) {
+      return Promise.resolve()
+        .then(sendMessage)
+        .then(abort);
+
+      function sendMessage() {
+        return RespondToUser(robot, res, error);
+      }
+    }
+
     return listWorkloadsPromise;
   });
 
   robot.respond(/list (rancher|Rancher) projects/i, res => {
     const listProjectsPromise = Promise.resolve()
       .tap(checkUserPermission)
-      .then(listProjects);
+      .then(listProjects)
+      .catch(sendError);
 
     function checkUserPermission() {
       return Promise.resolve()
@@ -69,6 +88,22 @@ module.exports = function rancherScript(robot) {
       return RancherHelper.listProjects(robot, res);
     }
 
+    function abort() {
+      listProjectsPromise.cancel();
+
+      return RespondToUser(robot, res, "", "Aborting execution.", "info");
+    }
+
+    function sendError(error) {
+      return Promise.resolve()
+        .then(sendMessage)
+        .then(abort);
+
+      function sendMessage() {
+        return RespondToUser(robot, res, error);
+      }
+    }
+
     return listProjectsPromise;
   });
 
@@ -83,7 +118,9 @@ module.exports = function rancherScript(robot) {
 
       const actionPromise = Promise.resolve()
         .tap(checkUserPermission)
-        .then(performAction);
+        .tap(checkMessage)
+        .then(performAction)
+        .catch(sendError);
 
       function checkUserPermission() {
         return Promise.resolve()
@@ -94,6 +131,14 @@ module.exports = function rancherScript(robot) {
             }
             return null;
           });
+      }
+
+      function checkMessage() {
+        if (action === "rollback" && revisionName && !rollbackType) {
+          throw new Error(
+            `It seems that you're trying to rollback to revision ${revisionName} but *revision* keyword is missing. Please make sure you're doing the right operation and try again.`
+          );
+        }
       }
 
       function performAction() {
@@ -108,6 +153,22 @@ module.exports = function rancherScript(robot) {
         );
       }
 
+      function abort() {
+        actionPromise.cancel();
+
+        return RespondToUser(robot, res, "", "Aborting execution.", "info");
+      }
+
+      function sendError(error) {
+        return Promise.resolve()
+          .then(sendMessage)
+          .then(abort);
+
+        function sendMessage() {
+          return RespondToUser(robot, res, error);
+        }
+      }
+
       return actionPromise;
     }
   );
@@ -118,16 +179,17 @@ module.exports = function rancherScript(robot) {
       const workloadId = res.match[3];
       const projectId = res.match[2];
 
-      const listProjectsPromise = Promise.resolve()
+      const listRevisionsPromise = Promise.resolve()
         .tap(checkUserPermission)
-        .then(listRevisions);
+        .then(listRevisions)
+        .catch(sendError);
 
       function checkUserPermission() {
         return Promise.resolve()
           .then(CheckPermission(robot, res))
           .tap(hasPermission => {
             if (!hasPermission) {
-              return listProjectsPromise.cancel();
+              return listRevisionsPromise.cancel();
             }
             return null;
           });
@@ -137,7 +199,23 @@ module.exports = function rancherScript(robot) {
         return RancherHelper.listRevisions(robot, res, workloadId, projectId);
       }
 
-      return listProjectsPromise;
+      function abort() {
+        listRevisionsPromise.cancel();
+  
+        return RespondToUser(robot, res, "", "Aborting execution.", "info");
+      }
+  
+      function sendError(error) {
+        return Promise.resolve()
+          .then(sendMessage)
+          .then(abort);
+  
+        function sendMessage() {
+          return RespondToUser(robot, res, error);
+        }
+      }
+
+      return listRevisionsPromise;
     }
   );
 };

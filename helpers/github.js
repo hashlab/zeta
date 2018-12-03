@@ -104,7 +104,7 @@ exports.listRepositories = function listRepositories(robot, res) {
     .then(finishList);
 
   function startList() {
-    return RespondToUser(robot, res, "", "Listing repositories...", "info");
+    return RespondToUser(robot, res, "", "Listing Github repositories...", "info");
   }
 
   function listRepositories() {
@@ -245,7 +245,7 @@ exports.listCommits = function listCommits(robot, res, repository) {
       robot,
       res,
       false,
-      `Listing repository ${repository} commits...`,
+      `Listing Github repository ${repository} commits...`,
       "info"
     );
   }

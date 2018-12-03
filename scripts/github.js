@@ -16,6 +16,7 @@
 const Promise = require("bluebird");
 const CheckPermission = require("../helpers/check-permission");
 const GithubHelper = require("../helpers/github");
+const RespondToUser = require("../helpers/response");
 
 Promise.config({
   cancellation: true
@@ -25,7 +26,8 @@ module.exports = function rancherScript(robot) {
   robot.respond(/list (github|Github) (repositories|repos)/i, res => {
     const listRepositoriesPromise = Promise.resolve()
       .tap(checkUserPermission)
-      .then(listRepositories);
+      .then(listRepositories)
+      .catch(sendError);
 
     function checkUserPermission() {
       return Promise.resolve()
@@ -42,22 +44,39 @@ module.exports = function rancherScript(robot) {
       return GithubHelper.listRepositories(robot, res);
     }
 
+    function abort() {
+      listRepositoriesPromise.cancel();
+  
+      return RespondToUser(robot, res, "", "Aborting execution.", "info");
+    }
+  
+    function sendError(error) {
+      return Promise.resolve()
+        .then(sendMessage)
+        .then(abort);
+  
+      function sendMessage() {
+        return RespondToUser(robot, res, error);
+      }
+    }
+
     return listRepositoriesPromise;
   });
 
   robot.respond(/list (github|Github) ([\w-]+) commits/i, res => {
     const repository = res.match[2];
 
-    const listRepositoriesPromise = Promise.resolve()
+    const listCommitsPromise = Promise.resolve()
       .tap(checkUserPermission)
-      .then(listCommits);
+      .then(listCommits)
+      .catch(sendError)
 
     function checkUserPermission() {
       return Promise.resolve()
         .then(CheckPermission(robot, res))
         .tap(hasPermission => {
           if (!hasPermission) {
-            return listRepositoriesPromise.cancel();
+            return listCommitsPromise.cancel();
           }
           return null;
         });
@@ -67,6 +86,22 @@ module.exports = function rancherScript(robot) {
       return GithubHelper.listCommits(robot, res, repository);
     }
 
-    return listRepositoriesPromise;
+    function abort() {
+      listCommitsPromise.cancel();
+  
+      return RespondToUser(robot, res, "", "Aborting execution.", "info");
+    }
+  
+    function sendError(error) {
+      return Promise.resolve()
+        .then(sendMessage)
+        .then(abort);
+  
+      function sendMessage() {
+        return RespondToUser(robot, res, error);
+      }
+    }
+
+    return listCommitsPromise;
   });
 };

@@ -40,9 +40,10 @@ module.exports = function deployScript(robot) {
         .then(checkCommit)
         .then(checkRancherProject)
         .then(checkRancherWorkload)
-        .then(checkQuayRepository)
-        .then(checkQuayImage)
-        .then(deploy);
+        .spread(checkQuayRepository)
+        .spread(checkQuayImage)
+        .spread(deploy)
+        .catch(sendError);
 
       function checkUserPermission() {
         return Promise.resolve()
@@ -123,11 +124,13 @@ module.exports = function deployScript(robot) {
         function decide(work) {
           if (!work) {
             return abort();
+          } else {
+            return [proj, work];
           }
         }
       }
 
-      function checkQuayRepository() {
+      function checkQuayRepository(proj, wrkld) {
         return Promise.resolve()
           .then(checkQuay)
           .then(decide);
@@ -139,11 +142,13 @@ module.exports = function deployScript(robot) {
         function decide(repo) {
           if (!repo) {
             return abort();
+          } else {
+            return [proj, wrkld];
           }
         }
       }
 
-      function checkQuayImage() {
+      function checkQuayImage(proj, wrkld) {
         return Promise.resolve()
           .then(checkQuay)
           .then(decide);
@@ -155,13 +160,16 @@ module.exports = function deployScript(robot) {
         function decide(image) {
           if (!image) {
             return abort();
+          } else {
+            return [proj, wrkld];
           }
         }
       }
 
-      function deploy() {
-        return Promise.resolve().then(sendMessage);
-        // .then(deploy);
+      function deploy(proj, wrkld) {
+        return Promise.resolve()
+          .then(sendMessage)
+          .then(deployImage);
 
         function sendMessage() {
           return RespondToUser(
@@ -173,15 +181,35 @@ module.exports = function deployScript(robot) {
           );
         }
 
-        // function deploy() {
-        //   return RancherHelper.performAction(robot, res, "deploy", )
-        // }
+        function deployImage() {
+          return RancherHelper.performAction(
+            robot,
+            res,
+            "deploy",
+            undefined,
+            proj.id,
+            project,
+            undefined,
+            wrkld,
+            commit
+          );
+        }
       }
 
       function abort() {
         deployPromise.cancel();
 
         return RespondToUser(robot, res, "", "Aborting execution.", "info");
+      }
+
+      function sendError(error) {
+        return Promise.resolve()
+          .then(sendMessage)
+          .then(abort);
+
+        function sendMessage() {
+          return RespondToUser(robot, res, error);
+        }
       }
 
       return deployPromise;

@@ -31,7 +31,9 @@ exports.performAction = function performAction(
   workloadId,
   projectId,
   revisionName,
-  rollbackType
+  rollbackType,
+  workload,
+  commit
 ) {
   var auth = undefined;
 
@@ -59,8 +61,9 @@ exports.performAction = function performAction(
         robot,
         res,
         false,
-        `Starting *${action}* operation: workload ${workloadId} at project ${projectId} to ${revisionName ||
-          rollbackType}...`,
+        `*Starting ${action} operation: workload ${workloadId ||
+          workload.id} at project ${projectId} to ${revisionName ||
+          rollbackType}...*`,
         "info"
       );
     }
@@ -91,18 +94,44 @@ exports.performAction = function performAction(
   }
 
   function performAction(revision) {
-    const request = robot
-      .http(process.env.RANCHER_API_URL)
-      .path(`project/${projectId}/workloads/${workloadId}`)
-      .query({
-        action: action
-      })
-      .header("Authorization", auth)
-      .post(
-        JSON.stringify({
-          replicaSetId: revision.id
+    let request;
+
+    if (action === "deploy") {
+      // I'm assuming the workload only has one container. If the workload has more than one container, this method might not work properly, and here's where to fix it.
+
+      const container = workload.containers[0];
+      const newContainerUrl = `${container.image.substring(
+        0,
+        container.image.length - 7
+      )}${commit}`;
+
+      const newContainer = Object.assign(workload.containers[0], {
+        image: newContainerUrl
+      });
+
+      request = robot
+        .http(process.env.RANCHER_API_URL)
+        .path(`project/${projectId}/workloads/${workloadId || workload.id}`)
+        .header("Authorization", auth)
+        .put(
+          JSON.stringify({
+            containers: [newContainer]
+          })
+        );
+    } else {
+      request = robot
+        .http(process.env.RANCHER_API_URL)
+        .path(`project/${projectId}/workloads/${workloadId || workload.id}`)
+        .header("Authorization", auth)
+        .query({
+          action: action
         })
-      );
+        .post(
+          JSON.stringify({
+            replicaSetId: revision.id
+          })
+        );
+    }
 
     // eslint-disable-next-line promise/avoid-new
     return new Promise((resolve, reject) => {
