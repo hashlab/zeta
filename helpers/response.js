@@ -1,72 +1,57 @@
 const Promise = require("bluebird");
 
 function successMessage(response, message) {
-  // eslint-disable-next-line promise/avoid-new
-  return new Promise(resolve => {
-    response.send(
-      {
-        room: response.message.user.room
-      },
-      {
-        as_user: true,
-        attachments: [
-          {
-            title: "Success",
-            text: message,
-            color: "good",
-            mrkdwn_in: ["text"]
-          }
-        ]
-      },
-      () => resolve()
-    );
-  });
+  return Promise.resolve().then(sendMessage);
+
+  function sendMessage() {
+    return response.send({
+      as_user: true,
+      attachments: [
+        {
+          title: "Success",
+          text: message,
+          color: "good",
+          mrkdwn_in: ["text"]
+        }
+      ]
+    });
+  }
 }
 
 function infoMessage(response, message) {
-  // eslint-disable-next-line promise/avoid-new
-  return new Promise(resolve => {
-    response.send(
-      {
-        room: response.message.user.room
-      },
-      {
-        as_user: true,
-        attachments: [
-          {
-            title: "Information",
-            text: message,
-            color: "#1e90ff",
-            mrkdwn_in: ["text"]
-          }
-        ]
-      },
-      () => resolve()
-    );
-  });
+  return Promise.resolve().then(sendMessage);
+
+  function sendMessage() {
+    return response.send({
+      as_user: true,
+      attachments: [
+        {
+          title: "Information",
+          text: message,
+          color: "#1e90ff",
+          mrkdwn_in: ["text"]
+        }
+      ]
+    });
+  }
 }
 
 function errorMessage(response, message) {
-  // eslint-disable-next-line promise/avoid-new
-  return new Promise(resolve => {
-    response.send(
-      {
-        room: response.message.user.room
-      },
-      {
-        as_user: true,
-        attachments: [
-          {
-            title: "Error",
-            text: message,
-            color: "danger",
-            mrkdwn_in: ["text"]
-          }
-        ]
-      },
-      () => resolve()
-    );
-  });
+  return Promise.resolve().then(sendMessage);
+
+  function sendMessage() {
+    return response.send({
+      as_user: true,
+      attachments: [
+        {
+          title: "Error",
+          text: message,
+          color: "danger",
+          mrkdwn_in: ["text"]
+        }
+      ]
+    });
+  }
 }
 
 module.exports = function respondToUser(robot, response, error, message, type) {
