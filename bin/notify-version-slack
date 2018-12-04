@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+set -e
+
+echo ""
+echo "Notifying version to slack..."
+echo ""
+
+# Post message to slack
+curl $SLACK_WEBHOOK_URL \
+ -X POST \
+ -H 'Content-type: application/json' \
+ -d "{\"text\": \"*Houston:* The version \`$(echo $CIRCLE_SHA1 | cut -c1-7)\` of \`$CIRCLE_PROJECT_REPONAME\` is ready to be deployed.\"}"
