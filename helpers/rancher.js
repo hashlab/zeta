@@ -105,7 +105,7 @@ exports.performAction = function performAction(
         container.image.length - 7
       )}${commit}`;
 
-      const newContainer = Object.assign(workload.containers[0], {
+      const newContainer = Object.assign(container, {
         image: newContainerUrl
       });
 
