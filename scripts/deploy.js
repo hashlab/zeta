@@ -7,7 +7,7 @@
 // Configuration:
 //
 // Commands:
-//   deploy <github-commit> to workload name <rancher-workload> in (Staging|Production) (dry run)- Deploys the specified commit to the specified workload at Rancher
+//   deploy <github-commit> to workload <rancher-workload-name> in (Staging|Production) (dry run) - Deploys the specified commit to the specified workload at Rancher
 //
 // Author:
 //   caio.elias@hashlab.com.br
@@ -24,13 +24,12 @@ Promise.config({
 
 module.exports = function deployScript(robot) {
   robot.respond(
-    /deploy ([a-z0-9]{7,}) to workload (name) ([\w-]+) in (Staging|Production)\s*(dry run)+/i,
+    /deploy ([a-z0-9]{7,}) to workload ([\w-]+) in (Staging|Production)\s*(dry run)+/i,
     res => {
       const commit = res.match[1].substring(0, 7);
-      const workloadType = res.match[2];
-      const workload = res.match[3];
-      const project = res.match[4];
-      const dryRun = res.match[5];
+      const workload = res.match[2];
+      const project = res.match[3];
+      const dryRun = res.match[4];
 
       const deployPromise = Promise.resolve()
         .tap(checkUserPermission)
@@ -76,13 +75,7 @@ module.exports = function deployScript(robot) {
           .then(decide);
 
         function checkWorkload() {
-          return RancherHelper.checkWorkload(
-            robot,
-            res,
-            proj,
-            workloadType,
-            workload
-          );
+          return RancherHelper.checkWorkload(robot, res, proj, workload);
         }
 
         function decide(work) {
