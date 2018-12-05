@@ -593,13 +593,7 @@ exports.listWorkloads = function listWorkloads(robot, res, projectId) {
   }
 };
 
-exports.checkWorkload = function checkWorkload(
-  robot,
-  res,
-  project,
-  workloadType,
-  workload
-) {
+exports.checkWorkload = function checkWorkload(robot, res, project, workload) {
   var auth = undefined;
 
   if (!checkVariables(robot)) {
@@ -628,7 +622,7 @@ exports.checkWorkload = function checkWorkload(
       .http(`${process.env.RANCHER_API_URL}`)
       .path(`projects/${project.id}/workloads`)
       .query({
-        [workloadType]: workload
+        name: workload
       })
       .header("Authorization", auth)
       .get();
