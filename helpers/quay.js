@@ -283,3 +283,9 @@ exports.listRepositories = function listRepositories(robot, res) {
     }
   }
 };
+
+exports.parseQuayRepository = function parseQuayRepository(quayUrl) {
+  let slicedUrl = quayUrl.split("/");
+
+  return slicedUrl[slicedUrl.length - 1].split(":")[0];
+};

@@ -7,7 +7,7 @@
 // Configuration:
 //
 // Commands:
-//   deploy <github-repository>:<github-commit> at <quay-repository> to workload name <rancher-workload> in (Staging|Production) - Deploys the specified commit to the specified workload at Rancher
+//   deploy <github-repository>:<github-commit> to workload name <rancher-workload> in (Staging|Production) - Deploys the specified commit to the specified workload at Rancher
 //
 // Author:
 //   caio.elias@hashlab.com.br
@@ -25,14 +25,13 @@ Promise.config({
 
 module.exports = function deployScript(robot) {
   robot.respond(
-    /deploy ([\w-]+):([a-z0-9]{7,}) at ([\w-]+) to workload (name) ([\w-]+) in (Staging|Production)/i,
+    /deploy ([\w-]+):([a-z0-9]{7,}) to workload (name) ([\w-]+) in (Staging|Production)/i,
     res => {
       const repository = res.match[1];
       const commit = res.match[2].substring(0, 7);
-      const quayRepository = res.match[3];
-      const workloadType = res.match[4];
-      const workload = res.match[5];
-      const project = res.match[6];
+      const workloadType = res.match[3];
+      const workload = res.match[4];
+      const project = res.match[5];
 
       const deployPromise = Promise.resolve()
         .tap(checkUserPermission)
@@ -130,43 +129,52 @@ module.exports = function deployScript(robot) {
         }
       }
 
-      function checkQuayRepository(proj, wrkld) {
+      function checkQuayRepository(proj, workloadData) {
         return Promise.resolve()
           .then(checkQuay)
           .then(decide);
 
         function checkQuay() {
-          return QuayHelper.checkRepository(robot, res, quayRepository);
+          return QuayHelper.checkRepository(
+            robot,
+            res,
+            QuayHelper.parseQuayRepository(workloadData.containers[0].image)
+          );
         }
 
         function decide(repo) {
           if (!repo) {
             return abort();
           } else {
-            return [proj, wrkld];
+            return [proj, workloadData];
           }
         }
       }
 
-      function checkQuayImage(proj, wrkld) {
+      function checkQuayImage(proj, workloadData) {
         return Promise.resolve()
           .then(checkQuay)
           .then(decide);
 
         function checkQuay() {
-          return QuayHelper.checkImage(robot, res, quayRepository, commit);
+          return QuayHelper.checkImage(
+            robot,
+            res,
+            QuayHelper.parseQuayRepository(workloadData.containers[0].image),
+            commit
+          );
         }
 
         function decide(image) {
           if (!image) {
             return abort();
           } else {
-            return [proj, wrkld];
+            return [proj, workloadData];
           }
         }
       }
 
-      function deploy(proj, wrkld) {
+      function deploy(proj, workloadData) {
         return Promise.resolve()
           .then(sendMessage)
           .then(deployImage);
@@ -190,7 +198,7 @@ module.exports = function deployScript(robot) {
             proj.id,
             project,
             undefined,
-            wrkld,
+            workloadData,
             commit
           );
         }
@@ -203,6 +211,7 @@ module.exports = function deployScript(robot) {
       }
 
       function sendError(error) {
+        // eslint-disable-next-line promise/no-promise-in-callback
         return Promise.resolve()
           .then(sendMessage)
           .then(abort);
