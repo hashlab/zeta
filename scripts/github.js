@@ -46,15 +46,16 @@ module.exports = function rancherScript(robot) {
 
     function abort() {
       listRepositoriesPromise.cancel();
-  
+
       return RespondToUser(robot, res, "", "Aborting execution.", "info");
     }
-  
+
     function sendError(error) {
+      // eslint-disable-next-line promise/no-promise-in-callback
       return Promise.resolve()
         .then(sendMessage)
         .then(abort);
-  
+
       function sendMessage() {
         return RespondToUser(robot, res, error);
       }
@@ -69,7 +70,7 @@ module.exports = function rancherScript(robot) {
     const listCommitsPromise = Promise.resolve()
       .tap(checkUserPermission)
       .then(listCommits)
-      .catch(sendError)
+      .catch(sendError);
 
     function checkUserPermission() {
       return Promise.resolve()
@@ -88,15 +89,16 @@ module.exports = function rancherScript(robot) {
 
     function abort() {
       listCommitsPromise.cancel();
-  
+
       return RespondToUser(robot, res, "", "Aborting execution.", "info");
     }
-  
+
     function sendError(error) {
+      // eslint-disable-next-line promise/no-promise-in-callback
       return Promise.resolve()
         .then(sendMessage)
         .then(abort);
-  
+
       function sendMessage() {
         return RespondToUser(robot, res, error);
       }

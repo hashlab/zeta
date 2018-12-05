@@ -55,6 +55,7 @@ module.exports = function rancherScript(robot) {
     }
 
     function sendError(error) {
+      // eslint-disable-next-line promise/no-promise-in-callback
       return Promise.resolve()
         .then(sendMessage)
         .then(abort);
@@ -95,6 +96,7 @@ module.exports = function rancherScript(robot) {
     }
 
     function sendError(error) {
+      // eslint-disable-next-line promise/no-promise-in-callback
       return Promise.resolve()
         .then(sendMessage)
         .then(abort);
@@ -160,6 +162,7 @@ module.exports = function rancherScript(robot) {
       }
 
       function sendError(error) {
+        // eslint-disable-next-line promise/no-promise-in-callback
         return Promise.resolve()
           .then(sendMessage)
           .then(abort);
@@ -201,15 +204,16 @@ module.exports = function rancherScript(robot) {
 
       function abort() {
         listRevisionsPromise.cancel();
-  
+
         return RespondToUser(robot, res, "", "Aborting execution.", "info");
       }
-  
+
       function sendError(error) {
+        // eslint-disable-next-line promise/no-promise-in-callback
         return Promise.resolve()
           .then(sendMessage)
           .then(abort);
-  
+
         function sendMessage() {
           return RespondToUser(robot, res, error);
         }

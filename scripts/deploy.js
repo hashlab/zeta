@@ -7,14 +7,13 @@
 // Configuration:
 //
 // Commands:
-//   deploy <github-repository>:<github-commit> to workload name <rancher-workload> in (Staging|Production) - Deploys the specified commit to the specified workload at Rancher
+//   deploy <github-commit> to workload name <rancher-workload> in (Staging|Production) (dry run)- Deploys the specified commit to the specified workload at Rancher
 //
 // Author:
 //   caio.elias@hashlab.com.br
 
 const Promise = require("bluebird");
 const CheckPermission = require("../helpers/check-permission");
-const GitHubHelper = require("../helpers/github");
 const RancherHelper = require("../helpers/rancher");
 const QuayHelper = require("../helpers/quay");
 const RespondToUser = require("../helpers/response");
@@ -25,18 +24,16 @@ Promise.config({
 
 module.exports = function deployScript(robot) {
   robot.respond(
-    /deploy ([\w-]+):([a-z0-9]{7,}) to workload (name) ([\w-]+) in (Staging|Production)/i,
+    /deploy ([a-z0-9]{7,}) to workload (name) ([\w-]+) in (Staging|Production)\s*(dry run)+/i,
     res => {
-      const repository = res.match[1];
-      const commit = res.match[2].substring(0, 7);
-      const workloadType = res.match[3];
-      const workload = res.match[4];
-      const project = res.match[5];
+      const commit = res.match[1].substring(0, 7);
+      const workloadType = res.match[2];
+      const workload = res.match[3];
+      const project = res.match[4];
+      const dryRun = res.match[5];
 
       const deployPromise = Promise.resolve()
         .tap(checkUserPermission)
-        .then(checkRepository)
-        .then(checkCommit)
         .then(checkRancherProject)
         .then(checkRancherWorkload)
         .spread(checkQuayRepository)
@@ -53,38 +50,6 @@ module.exports = function deployScript(robot) {
             }
             return null;
           });
-      }
-
-      function checkRepository() {
-        return Promise.resolve()
-          .then(check)
-          .then(decide);
-
-        function check() {
-          return GitHubHelper.checkRepository(robot, res, repository);
-        }
-
-        function decide(repo) {
-          if (!repo) {
-            return abort();
-          }
-        }
-      }
-
-      function checkCommit() {
-        return Promise.resolve()
-          .then(check)
-          .then(decide);
-
-        function check() {
-          return GitHubHelper.checkCommit(robot, res, repository, commit);
-        }
-
-        function decide(com) {
-          if (!com) {
-            return abort();
-          }
-        }
       }
 
       function checkRancherProject() {
@@ -190,17 +155,19 @@ module.exports = function deployScript(robot) {
         }
 
         function deployImage() {
-          return RancherHelper.performAction(
-            robot,
-            res,
-            "deploy",
-            undefined,
-            proj.id,
-            project,
-            undefined,
-            workloadData,
-            commit
-          );
+          if (!dryRun) {
+            return RancherHelper.performAction(
+              robot,
+              res,
+              "deploy",
+              undefined,
+              proj.id,
+              project,
+              undefined,
+              workloadData,
+              commit
+            );
+          }
         }
       }
 

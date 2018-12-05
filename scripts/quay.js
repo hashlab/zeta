@@ -51,6 +51,7 @@ module.exports = function rancherScript(robot) {
     }
 
     function sendError(error) {
+      // eslint-disable-next-line promise/no-promise-in-callback
       return Promise.resolve()
         .then(sendMessage)
         .then(abort);
