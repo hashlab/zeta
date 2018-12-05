@@ -4,11 +4,11 @@ echo "Preparing environment..."
 
 echo ""
 
-echo "Creating environment variables..."
-
-cp .env.example .env || exit 1
-
-echo ""
+if [ ! -f .env ]; then
+    echo "Creating environment variables..."
+    cp .env.example .env || exit 1
+    echo ""
+fi
 
 echo "Building docker images..."
 
