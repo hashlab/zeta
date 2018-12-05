@@ -24,7 +24,7 @@ Promise.config({
 
 module.exports = function deployScript(robot) {
   robot.respond(
-    /deploy ([a-z0-9]{7,}) to workload ([\w-]+) in (Staging|Production)\s*(dry run)+/i,
+    /deploy ([a-z0-9]{7,}) to workload ([\w-]+) in (Staging|Production)\s*(dry-run)+/i,
     res => {
       const commit = res.match[1].substring(0, 7);
       const workload = res.match[2];
