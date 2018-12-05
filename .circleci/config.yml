@@ -1,0 +1,46 @@
+version: 2
+jobs:
+  build_and_push_bot:
+    machine: true
+    working_directory: ~/repo
+    steps:
+        - checkout
+        # Run docker login
+        - run:
+           name: Run docker login
+           command: docker login quay.io -u $QUAY_USER -p $QUAY_PASS
+        # Run docker build
+        - run:
+           name: Run docker build
+           command: docker build -f Dockerfile -t quay.io/hashlab/zeta:$(echo $CIRCLE_SHA1 | cut -c1-7) .
+        # Run docker push
+        - run:
+           name: Run docker push
+           command: docker push quay.io/hashlab/zeta:$(echo $CIRCLE_SHA1 | cut -c1-7)
+        # Notify slack
+        - run:
+           name: Notify slack
+           command: bin/notify-build-slack quay.io/hashlab/zeta:$(echo $CIRCLE_SHA1 | cut -c1-7)
+  notify_version_slack:
+    machine: true
+    working_directory: ~/repo
+    steps:
+        - checkout
+        # Notify slack
+        - run:
+           name: Notify slack
+           command: bin/notify-version-slack
+workflows:
+  version: 2
+  build_push_notify:
+    jobs:
+      - build_and_push_bot:
+          filters:
+            branches:
+              only: master
+      - notify_version_slack:
+          requires:
+            - build_and_push_bot
+          filters:
+            branches:
+              only: master

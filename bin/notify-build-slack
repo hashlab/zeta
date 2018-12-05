@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+set -e
+
+echo ""
+echo "Notifying build to slack..."
+echo ""
+
+# Post message to slack
+curl $SLACK_WEBHOOK_URL \
+ -X POST \
+ -H 'Content-type: application/json' \
+ -d "{\"text\": \"*Houston:* The docker image \`$1\` of \`$CIRCLE_PROJECT_REPONAME\` was pushed to container registry by \`$CIRCLE_USERNAME\` and is ready to use.\"}"
