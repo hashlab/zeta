@@ -25,27 +25,34 @@
 1º Clone zeta repo
 
 ```bash
-$ git clone git@github.com:hashlab/zeta.git
+git clone git@github.com:hashlab/zeta.git
 ```
 
 2º Enter in zeta directory
+
 ```bash
-$ cd zeta
+cd zeta
 ```
 
 3º Run the setup script
+
 ```bash
-$ make setup
+
+make setup
 ```
 
 4º Configure the environment variables
+
 ```bash
-$ nvim .env
+
+nvim .env
 ```
 
 5º Run the bot
+
 ```bash
-$ make start
+
+make start
 ```
 
 ## Conventions of commit messages
@@ -109,8 +116,9 @@ Bug reports and pull requests are welcome on GitHub at [https://github.com/hashl
 5. Create new Pull Request
 
 ## Support
+
 If you have any problem or suggestion please open an issue [here](https://github.com/hashlab/zeta/issues).
 
-## License 
+## License
 
 Check [here](LICENSE).
