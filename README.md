@@ -16,7 +16,7 @@
 
 ```
 
-[![Maintenance](https://img.shields.io/maintenance/yes/2018.svg)]() [![License](https://img.shields.io/github/license/hashlab/zeta.svg)](https://github.com/hashlab/zeta/blob/master/LICENSE) [![Twitter Follow](https://img.shields.io/twitter/follow/chrisenytc.svg?style=social&label=Follow)](http://twitter.com/chrisenytc) [![Twitter URL](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Awesome%20https://github.com/hashlab/zeta%20via%20@chrisenytc)
+[![Maintenance](https://img.shields.io/maintenance/yes/2019.svg)](https://github.com/hashlab/zeta/commits/master) [![License](https://img.shields.io/github/license/hashlab/zeta.svg)](https://github.com/hashlab/zeta/blob/master/LICENSE) [![Twitter Follow](https://img.shields.io/twitter/follow/chrisenytc.svg?style=social&label=Follow)](http://twitter.com/chrisenytc) [![Twitter URL](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Awesome%20https://github.com/hashlab/zeta%20via%20@chrisenytc)
 
 > A bot to help our DevOps teams manage our infrastructure
 
