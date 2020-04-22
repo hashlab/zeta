@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "aws-sdk": "2.364.0",
-    "axios": "0.18.0",
+    "axios": "0.18.1",
     "bluebird": "3.5.3",
     "cuid": "2.1.4",
     "hubot": "3.1.1",
