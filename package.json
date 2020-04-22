@@ -39,7 +39,7 @@
     "ramda": "0.26.0"
   },
   "devDependencies": {
-    "eslint": "4.9.0",
+    "eslint": "4.18.2",
     "eslint-config-prettier": "2.9.0",
     "eslint-plugin-prettier": "2.4.0",
     "eslint-plugin-promise": "3.6.0",
